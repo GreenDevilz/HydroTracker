@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Override to use Dark Theme when system is in dark mode -->
+    <style name="Theme.WaterIntakeTracker" parent="Theme.WaterIntakeTracker.Dark" />
+</resources>
