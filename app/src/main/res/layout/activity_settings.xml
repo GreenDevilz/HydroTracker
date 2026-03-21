@@ -284,7 +284,6 @@
             <LinearLayout
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:background="?attr/cardBackground"
                 android:padding="@dimen/padding_small"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
