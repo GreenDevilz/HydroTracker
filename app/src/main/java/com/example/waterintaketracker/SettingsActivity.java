@@ -14,6 +14,7 @@ import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ScrollView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -235,6 +236,11 @@ public class SettingsActivity extends AppCompatActivity {
         this.calculatedGoal = Math.round(baseGoal / 50.0f) * 50;
         this.txtRecommendedGoal.setText(getString(R.string.format_ml, this.calculatedGoal));
         this.resultCard.setVisibility(View.VISIBLE);
+
+        ScrollView scrollView = findViewById(R.id.scrollView);
+        if (scrollView != null) {
+            scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+        }
     }
 
     private float getBaseGoal(float weight, int age) {

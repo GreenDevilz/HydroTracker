@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
@@ -122,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         updateProgressBarVisibility();
         updateBottleVisibility();
@@ -137,10 +138,46 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeFacts() {
         this.allFacts = new String[]{
-                getString(R.string.fact_1), getString(R.string.fact_2), getString(R.string.fact_3),
-                getString(R.string.fact_4), getString(R.string.fact_5), getString(R.string.fact_6),
-                getString(R.string.fact_7), getString(R.string.fact_8), getString(R.string.fact_9),
-                getString(R.string.fact_10), getString(R.string.fact_11), getString(R.string.fact_12)
+                getString(R.string.fact_1),
+                getString(R.string.fact_2),
+                getString(R.string.fact_3),
+                getString(R.string.fact_4),
+                getString(R.string.fact_5),
+                getString(R.string.fact_6),
+                getString(R.string.fact_7),
+                getString(R.string.fact_8),
+                getString(R.string.fact_9),
+                getString(R.string.fact_10),
+                getString(R.string.fact_11),
+                getString(R.string.fact_12),
+                getString(R.string.fact_13),
+                getString(R.string.fact_14),
+                getString(R.string.fact_15),
+                getString(R.string.fact_16),
+                getString(R.string.fact_17),
+                getString(R.string.fact_18),
+                getString(R.string.fact_19),
+                getString(R.string.fact_20),
+                getString(R.string.fact_21),
+                getString(R.string.fact_22),
+                getString(R.string.fact_23),
+                getString(R.string.fact_24),
+                getString(R.string.fact_25),
+                getString(R.string.fact_26),
+                getString(R.string.fact_27),
+                getString(R.string.fact_28),
+                getString(R.string.fact_29),
+                getString(R.string.fact_30),
+                getString(R.string.fact_31),
+                getString(R.string.fact_32),
+                getString(R.string.fact_33),
+                getString(R.string.fact_34),
+                getString(R.string.fact_35),
+                getString(R.string.fact_36),
+                getString(R.string.fact_37),
+                getString(R.string.fact_38),
+                getString(R.string.fact_39),
+                getString(R.string.fact_40)
         };
         calculateDayCounter();
         selectTodaysFacts();
@@ -216,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_reminder_settings, (ViewGroup) null);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_reminder_settings, null);
         final SwitchCompat switchReminders = dialogView.findViewById(R.id.switchReminders);
         final Spinner spinnerInterval = dialogView.findViewById(R.id.spinnerInterval);
         final NumberPicker pickerStartHour = dialogView.findViewById(R.id.pickerStartHour);
@@ -229,12 +266,13 @@ public class MainActivity extends AppCompatActivity {
 
         switchReminders.setChecked(ReminderScheduler.isReminderEnabled(this));
         int currentInterval = ReminderScheduler.getReminderInterval(this);
-        int intervalPosition = 1; // Default 1 hour
+        int intervalPosition;
         if (currentInterval == 30) intervalPosition = 0;
         else if (currentInterval == 60) intervalPosition = 1;
         else if (currentInterval == 120) intervalPosition = 2;
         else if (currentInterval == 180) intervalPosition = 3;
         else if (currentInterval == 240) intervalPosition = 4;
+        else intervalPosition = 1; // Default 1 hour
         spinnerInterval.setSelection(intervalPosition);
 
         pickerStartHour.setMinValue(0);
@@ -313,7 +351,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
