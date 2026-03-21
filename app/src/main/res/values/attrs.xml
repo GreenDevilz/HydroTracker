@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="cardBackground" format="color" />
+    <attr name="progressBackground" format="color" />
+    <attr name="warningBackground" format="color" />
+    <attr name="warningBorder" format="color" />
+    <attr name="warningHeader" format="color" />
+    <attr name="warningText" format="color" />
+    <attr name="textPrimary" format="color" />
+    <attr name="textSecondary" format="color" />
+</resources>
