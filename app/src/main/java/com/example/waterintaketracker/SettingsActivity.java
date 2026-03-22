@@ -309,9 +309,20 @@ public class SettingsActivity extends AppCompatActivity {
             isBreastfeeding = this.checkBreastfeeding.isChecked();
         }
 
+        // Check if the goal has changed from previously saved goal
+        int oldGoal = this.dataManager.getDailyGoal();
+        int newGoal = this.calculatedGoal;
+
+        // Save the profile
         this.dataManager.saveUserProfile(weight, age, gender, this.selectedActivity, this.selectedClimate,
                 height, bodyFat, activityDuration, isPregnant, isBreastfeeding);
-        this.dataManager.saveDailyGoal(this.calculatedGoal);
+
+        // If the goal has changed, update history entries to reflect the new goal
+        if (oldGoal != newGoal) {
+            this.dataManager.onGoalChanged(newGoal);
+        } else {
+            this.dataManager.saveDailyGoal(newGoal);
+        }
     }
 
     private void setCustomGoal() {
@@ -326,7 +337,7 @@ public class SettingsActivity extends AppCompatActivity {
             return;
         }
         if (validateInputs() && validateGenderConditions()) {
-            saveProfile();
+            saveProfile(); // This now handles the goal change properly
             Intent resultIntent = new Intent();
             resultIntent.putExtra("DAILY_GOAL", this.calculatedGoal);
             setResult(RESULT_OK, resultIntent);
