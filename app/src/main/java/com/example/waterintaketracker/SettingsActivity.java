@@ -19,6 +19,7 @@ import android.widget.ScrollView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingsActivity extends AppCompatActivity {
+    private boolean isInitialLoad = true;
     private Button btnCalculate;
     private Button btnSetCustomGoal;
     private CheckBox checkBreastfeeding;
@@ -133,6 +134,14 @@ public class SettingsActivity extends AppCompatActivity {
                 this.restrictedModeCard.setVisibility(View.VISIBLE);
                 this.btnCalculate.setVisibility(View.GONE);
                 this.resultCard.setVisibility(View.GONE);
+
+                // Auto-scroll to restricted mode card
+                if (!isInitialLoad) {
+                    ScrollView scrollView = findViewById(R.id.scrollView);
+                    if (scrollView != null) {
+                        scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+                    }
+                }
             } else {
                 this.restrictedModeCard.setVisibility(View.GONE);
                 this.btnCalculate.setVisibility(View.VISIBLE);
@@ -193,9 +202,18 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
 
-            // Load other health conditions (these are generic and apply to everyone)
-            // Note: You may want to save these in DataManager as well if you want them to persist
-            // For now, they remain unchecked by default when loading settings
+            // After loading gender, add:
+            this.checkFever.setChecked(this.dataManager.hasFever());
+            this.checkExcessiveSweating.setChecked(this.dataManager.hasExcessiveSweating());
+            this.checkHighUrine.setChecked(this.dataManager.hasHighUrine());
+            this.checkHighProtein.setChecked(this.dataManager.hasHighProtein());
+            this.checkCreatine.setChecked(this.dataManager.hasCreatine());
+            this.checkRestricted.setChecked(this.dataManager.hasRestricted());
+
+            this.checkRestricted.setChecked(this.dataManager.hasRestricted());
+            isInitialLoad = false;
+
+
         }
     }
 
@@ -315,7 +333,14 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Save the profile
         this.dataManager.saveUserProfile(weight, age, gender, this.selectedActivity, this.selectedClimate,
-                height, bodyFat, activityDuration, isPregnant, isBreastfeeding);
+                height, bodyFat, activityDuration,
+                isPregnant, isBreastfeeding,
+                this.checkFever.isChecked(),
+                this.checkExcessiveSweating.isChecked(),
+                this.checkHighUrine.isChecked(),
+                this.checkHighProtein.isChecked(),
+                this.checkCreatine.isChecked(),
+                this.checkRestricted.isChecked());
 
         // If the goal has changed, update history entries to reflect the new goal
         if (oldGoal != newGoal) {
@@ -345,6 +370,70 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    private float getTotalWaterRequirement(float weight, int age, boolean isMale,
+                                           Integer height, Float bodyFat,
+                                           String activityLevel, Integer activityDuration,
+                                           String climate,
+                                           boolean excessiveSweating, boolean highUrine, boolean highProtein,
+                                           boolean isPregnant, boolean isBreastfeeding, boolean hasFever, boolean creatine) {
+
+        float reeKcal;
+        if (bodyFat != null && bodyFat > 0) {
+            float leanMass = weight * (1 - bodyFat / 100f);
+            reeKcal = 500f + 22f * leanMass;
+        } else if (height != null && height > 0) {
+            if (isMale) {
+                reeKcal = 10f * weight + 6.25f * height - 5f * age + 5f;
+            } else {
+                reeKcal = 10f * weight + 6.25f * height - 5f * age - 161f;
+            }
+        } else {
+            reeKcal = (isMale ? 24f : 22f) * weight;
+        }
+
+        float pal;
+        switch (activityLevel) {
+            case "Moderate":    pal = 1.6f; break;
+            case "Very Active": pal = 1.8f; break;
+            case "Athlete":     pal = 2.2f; break;
+            default:            pal = 1.4f; break;
+        }
+
+        float exerciseKcal = 0f;
+        if (activityDuration != null && activityDuration > 0) {
+            float met;
+            switch (activityLevel) {
+                case "Moderate":    met = 5f; break;
+                case "Very Active": met = 7f; break;
+                case "Athlete":     met = 9f; break;
+                default:            met = 3f; break;
+            }
+            exerciseKcal = met * weight * (activityDuration / 60f);
+        }
+
+        float totalWater = (reeKcal * pal + exerciseKcal);
+
+        switch (climate) {
+            case "Hot":    totalWater *= 1.3f; break;
+            case "Normal": totalWater *= 1.1f; break;
+            default:       break;
+        }
+
+        if (excessiveSweating) totalWater *= 1.2f;
+        if (highUrine) totalWater *= 1.15f;
+        if (highProtein) totalWater *= 1.10f;
+
+        if (isPregnant) totalWater += 300f;
+        if (isBreastfeeding) totalWater += 700f;
+        if (hasFever) totalWater += 500f;
+        if (creatine) totalWater += 500f;
+
+        if (age > 65) totalWater *= 1.05f;
+        else if (age > 50) totalWater *= 1.02f;
+
+        return Math.max(totalWater, 0f);
+    }
+
     private void calculateHydration() {
         if (!validateInputs()) return;
 
@@ -360,12 +449,6 @@ public class SettingsActivity extends AppCompatActivity {
             return;
         }
 
-        // Validate gender-specific conditions
-        if (!validateGenderConditions()) {
-            return;
-        }
-
-        // Optional fields
         Integer height = null;
         if (!TextUtils.isEmpty(this.inputHeight.getText())) {
             height = Integer.parseInt(this.inputHeight.getText().toString());
@@ -392,15 +475,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         boolean isMale = this.radioMale.isChecked();
-        boolean isPregnant = false;
-        boolean isBreastfeeding = false;
-
-        // Only consider pregnancy/breastfeeding if female
-        if (!isMale) {
-            isPregnant = this.checkPregnancy.isChecked();
-            isBreastfeeding = this.checkBreastfeeding.isChecked();
-        }
-
+        boolean isPregnant = this.checkPregnancy.isChecked();
+        boolean isBreastfeeding = this.checkBreastfeeding.isChecked();
         boolean hasFever = this.checkFever.isChecked();
         boolean excessiveSweating = this.checkExcessiveSweating.isChecked();
         boolean highUrine = this.checkHighUrine.isChecked();
@@ -412,9 +488,7 @@ public class SettingsActivity extends AppCompatActivity {
                 excessiveSweating, highUrine, highProtein,
                 isPregnant, isBreastfeeding, hasFever, creatine);
 
-        // Account for food water (internal adjustment)
-        float foodWaterFactor = 0.2f; // assume 20% from food
-        float drinkingGoal = totalWater * (1 - foodWaterFactor);
+        float drinkingGoal = totalWater * 0.80f;
 
         this.calculatedGoal = Math.round(drinkingGoal / 50.0f) * 50;
         this.txtRecommendedGoal.setText(getString(R.string.format_ml, this.calculatedGoal));
@@ -424,73 +498,5 @@ public class SettingsActivity extends AppCompatActivity {
         if (scrollView != null) {
             scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
         }
-    }
-
-    private float getTotalWaterRequirement(float weight, int age, boolean isMale,
-                                           Integer height, Float bodyFat,
-                                           String activityLevel, Integer activityDuration,
-                                           String climate,
-                                           boolean excessiveSweating, boolean highUrine, boolean highProtein,
-                                           boolean isPregnant, boolean isBreastfeeding, boolean hasFever, boolean creatine) {
-        // Base water from all sources (ml)
-        float baseWater;
-
-        // Use body fat if provided -> lean body mass based
-        if (bodyFat != null && bodyFat > 0) {
-            float leanMass = weight * (1 - bodyFat / 100f);
-            // 40 ml per kg lean mass (typical range 40-45)
-            baseWater = leanMass * 40f;
-        }
-        // Else use height if provided -> body surface area based
-        else if (height != null && height > 0) {
-            // Mosteller BSA formula: sqrt( (weight * height) / 3600 )
-            double bsa = Math.sqrt((weight * height) / 3600.0);
-            // 1500 ml per m² BSA (typical range 1500-2000)
-            baseWater = (float) (bsa * 1500f);
-        }
-        // Else fall back to weight-based
-        else {
-            baseWater = (isMale ? 35f : 31f) * weight;
-        }
-
-        // Age adjustment
-        if (age > 65) baseWater *= 0.85f;
-        else if (age > 50) baseWater *= 0.9f;
-        else if (age > 30) baseWater *= 0.95f;
-
-        // Activity level multiplier
-        float activityMultiplier = 1.0f;
-        switch (activityLevel) {
-            case "Light": activityMultiplier = 1.2f; break;
-            case "Moderate": activityMultiplier = 1.4f; break;
-            case "Very Active": activityMultiplier = 1.6f; break;
-            case "Athlete": activityMultiplier = 2.0f; break;
-        }
-        baseWater *= activityMultiplier;
-
-        // Activity duration extra (ml per minute of moderate activity)
-        if (activityDuration != null && activityDuration > 0) {
-            baseWater += activityDuration * 10f; // 10 ml per minute
-        }
-
-        // Climate adjustment
-        switch (climate) {
-            case "Cool": break;
-            case "Hot": baseWater *= 1.3f; break;
-            default: baseWater *= 1.1f; break;
-        }
-
-        // Health conditions
-        if (excessiveSweating) baseWater *= 1.2f;
-        if (highUrine) baseWater *= 1.15f;
-        if (highProtein) baseWater *= 1.1f;
-
-        // Special conditions (additive)
-        if (isPregnant) baseWater += 300f;
-        if (isBreastfeeding) baseWater += 700f;
-        if (hasFever) baseWater += 500f;
-        if (creatine) baseWater += 500f;
-
-        return baseWater;
     }
 }

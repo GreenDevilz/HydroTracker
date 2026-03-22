@@ -12,6 +12,13 @@ import java.util.List;
 import java.util.Locale;
 
 public class DataManager {
+
+    private static final String KEY_USER_FEVER = "user_fever";
+    private static final String KEY_USER_EXCESSIVE_SWEATING = "user_excessive_sweating";
+    private static final String KEY_USER_HIGH_URINE = "user_high_urine";
+    private static final String KEY_USER_HIGH_PROTEIN = "user_high_protein";
+    private static final String KEY_USER_CREATINE = "user_creatine";
+    private static final String KEY_USER_RESTRICTED = "user_restricted";
     private static final String PREF_NAME = "HydroTrackPrefs";
     private static final String KEY_DAILY_GOAL = "daily_goal";
     private static final String KEY_CURRENT_INTAKE = "current_intake";
@@ -96,9 +103,7 @@ public class DataManager {
     }
 
     public void onGoalChanged(int newGoal) {
-        String today = getTodayDate();
-        int currentIntake = getCurrentIntake();
-        updateTodayEntry(currentIntake, newGoal);
+        updateTodayEntry(getCurrentIntake(), newGoal);
         this.editor.putInt(KEY_DAILY_GOAL, newGoal).apply();
     }
 
@@ -190,7 +195,9 @@ public class DataManager {
 
     // User profile save method (all settings)
     public void saveUserProfile(float weight, int age, String gender, String activityLevel, String climate,
-                                int height, float bodyFat, int activityDuration, boolean isPregnant, boolean isBreastfeeding) {
+                                int height, float bodyFat, int activityDuration, boolean isPregnant, boolean isBreastfeeding, boolean hasFever, boolean excessiveSweating,
+                                boolean highUrine, boolean highProtein, boolean creatine,
+                                boolean restricted) {
         this.editor.putFloat(KEY_USER_WEIGHT, weight);
         this.editor.putInt(KEY_USER_AGE, age);
         this.editor.putString(KEY_USER_GENDER, gender);
@@ -199,6 +206,12 @@ public class DataManager {
         this.editor.putInt(KEY_USER_HEIGHT, height);
         this.editor.putFloat(KEY_USER_BODY_FAT, bodyFat);
         this.editor.putInt(KEY_USER_ACTIVITY_DURATION, activityDuration);
+        this.editor.putBoolean(KEY_USER_FEVER, hasFever);
+        this.editor.putBoolean(KEY_USER_EXCESSIVE_SWEATING, excessiveSweating);
+        this.editor.putBoolean(KEY_USER_HIGH_URINE, highUrine);
+        this.editor.putBoolean(KEY_USER_HIGH_PROTEIN, highProtein);
+        this.editor.putBoolean(KEY_USER_CREATINE, creatine);
+        this.editor.putBoolean(KEY_USER_RESTRICTED, restricted);
 
         // Only save pregnancy/breastfeeding states for females
         if (gender.equals("Female")) {
@@ -212,6 +225,13 @@ public class DataManager {
     }
 
     // User profile getter methods
+
+    public boolean hasFever() { return this.preferences.getBoolean(KEY_USER_FEVER, false); }
+    public boolean hasExcessiveSweating() { return this.preferences.getBoolean(KEY_USER_EXCESSIVE_SWEATING, false); }
+    public boolean hasHighUrine() { return this.preferences.getBoolean(KEY_USER_HIGH_URINE, false); }
+    public boolean hasHighProtein() { return this.preferences.getBoolean(KEY_USER_HIGH_PROTEIN, false); }
+    public boolean hasCreatine() { return this.preferences.getBoolean(KEY_USER_CREATINE, false); }
+    public boolean hasRestricted() { return this.preferences.getBoolean(KEY_USER_RESTRICTED, false); }
     public float getUserWeight() {
         return this.preferences.getFloat(KEY_USER_WEIGHT, 70.0f);
     }
