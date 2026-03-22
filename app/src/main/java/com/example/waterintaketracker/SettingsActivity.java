@@ -11,6 +11,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,7 +19,6 @@ import android.widget.ScrollView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingsActivity extends AppCompatActivity {
-
     private Button btnCalculate;
     private Button btnSetCustomGoal;
     private CheckBox checkBreastfeeding;
@@ -37,6 +37,8 @@ public class SettingsActivity extends AppCompatActivity {
     private EditText inputBodyFat;
     private EditText inputActivityDuration;
     private RadioButton radioMale;
+    private RadioButton radioFemale;
+    private RadioGroup radioGroupGender;
     private LinearLayout restrictedModeCard;
     private LinearLayout resultCard;
     private Spinner spinnerActivity;
@@ -54,6 +56,7 @@ public class SettingsActivity extends AppCompatActivity {
         initializeViews();
         setupSpinners();
         setupClickListeners();
+        setupGenderValidation();
         loadSavedData();
         ReminderScheduler.scheduleReminders(this);
     }
@@ -65,6 +68,8 @@ public class SettingsActivity extends AppCompatActivity {
         this.inputBodyFat = findViewById(R.id.inputBodyFat);
         this.inputActivityDuration = findViewById(R.id.inputActivityDuration);
         this.radioMale = findViewById(R.id.radioMale);
+        this.radioFemale = findViewById(R.id.radioFemale);
+        this.radioGroupGender = findViewById(R.id.radioGroupGender);
         this.spinnerActivity = findViewById(R.id.spinnerActivity);
         this.spinnerClimate = findViewById(R.id.spinnerClimate);
         this.checkPregnancy = findViewById(R.id.checkPregnancy);
@@ -85,6 +90,43 @@ public class SettingsActivity extends AppCompatActivity {
         setupRestrictedModeListener();
     }
 
+    private void setupGenderValidation() {
+        // Listen for gender changes to clear invalid checkboxes
+        this.radioGroupGender.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean isMale = (checkedId == R.id.radioMale);
+            if (isMale) {
+                // Clear pregnancy and breastfeeding if male is selected
+                if (this.checkPregnancy.isChecked()) {
+                    this.checkPregnancy.setChecked(false);
+                    showGenderError("Pregnancy is only applicable for females");
+                }
+                if (this.checkBreastfeeding.isChecked()) {
+                    this.checkBreastfeeding.setChecked(false);
+                    showGenderError("Breastfeeding is only applicable for females");
+                }
+            }
+        });
+
+        // Validate when trying to check pregnancy or breastfeeding
+        this.checkPregnancy.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && this.radioMale.isChecked()) {
+                this.checkPregnancy.setChecked(false);
+                showGenderError("Pregnancy option is only available for female users");
+            }
+        });
+
+        this.checkBreastfeeding.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && this.radioMale.isChecked()) {
+                this.checkBreastfeeding.setChecked(false);
+                showGenderError("Breastfeeding option is only available for female users");
+            }
+        });
+    }
+
+    private void showGenderError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
     private void setupRestrictedModeListener() {
         this.checkRestricted.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
@@ -100,8 +142,11 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void loadSavedData() {
         if (this.dataManager.hasUserProfile()) {
+            // Load basic profile data
             this.inputWeight.setText(String.valueOf((int) this.dataManager.getUserWeight()));
             this.inputAge.setText(String.valueOf(this.dataManager.getUserAge()));
+
+            // Load optional physical metrics
             if (this.dataManager.getUserHeight() > 0) {
                 this.inputHeight.setText(String.valueOf(this.dataManager.getUserHeight()));
             }
@@ -111,13 +156,22 @@ public class SettingsActivity extends AppCompatActivity {
             if (this.dataManager.getUserActivityDuration() > 0) {
                 this.inputActivityDuration.setText(String.valueOf(this.dataManager.getUserActivityDuration()));
             }
-            if ("Female".equals(this.dataManager.getUserGender())) {
-                RadioButton radioFemale = findViewById(R.id.radioFemale);
-                if (radioFemale != null) radioFemale.setChecked(true);
+
+            // Load gender and gender-specific conditions
+            String savedGender = this.dataManager.getUserGender();
+            if ("Female".equals(savedGender)) {
+                this.radioFemale.setChecked(true);
+                // Load pregnancy and breastfeeding states for female users
+                this.checkPregnancy.setChecked(this.dataManager.isUserPregnant());
+                this.checkBreastfeeding.setChecked(this.dataManager.isUserBreastfeeding());
             } else {
                 this.radioMale.setChecked(true);
+                // Explicitly clear pregnancy/breastfeeding for male users
+                this.checkPregnancy.setChecked(false);
+                this.checkBreastfeeding.setChecked(false);
             }
 
+            // Load activity level
             String savedActivity = this.dataManager.getActivityLevel();
             String[] activityValues = {"Sedentary", "Light", "Moderate", "Very Active", "Athlete"};
             for (int i = 0; i < activityValues.length; i++) {
@@ -128,6 +182,7 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
 
+            // Load climate
             String savedClimate = this.dataManager.getClimate();
             String[] climateValues = {"Cool", "Moderate", "Hot"};
             for (int i = 0; i < climateValues.length; i++) {
@@ -137,6 +192,10 @@ public class SettingsActivity extends AppCompatActivity {
                     break;
                 }
             }
+
+            // Load other health conditions (these are generic and apply to everyone)
+            // Note: You may want to save these in DataManager as well if you want them to persist
+            // For now, they remain unchecked by default when loading settings
         }
     }
 
@@ -182,7 +241,7 @@ public class SettingsActivity extends AppCompatActivity {
         Button btnApply = findViewById(R.id.btnApply);
         if (btnApply != null) {
             btnApply.setOnClickListener(v -> {
-                if (validateInputs()) {
+                if (validateInputs() && validateGenderConditions()) {
                     saveProfile();
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("DAILY_GOAL", this.calculatedGoal);
@@ -205,6 +264,26 @@ public class SettingsActivity extends AppCompatActivity {
         return true;
     }
 
+    private boolean validateGenderConditions() {
+        boolean isMale = this.radioMale.isChecked();
+
+        if (isMale && (this.checkPregnancy.isChecked() || this.checkBreastfeeding.isChecked())) {
+            String errorMsg = "Pregnancy and breastfeeding options are only applicable for female users";
+            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+
+            // Uncheck invalid options
+            if (this.checkPregnancy.isChecked()) {
+                this.checkPregnancy.setChecked(false);
+            }
+            if (this.checkBreastfeeding.isChecked()) {
+                this.checkBreastfeeding.setChecked(false);
+            }
+            return false;
+        }
+
+        return true;
+    }
+
     private void saveProfile() {
         float weight = Float.parseFloat(this.inputWeight.getText().toString());
         int age = Integer.parseInt(this.inputAge.getText().toString());
@@ -221,8 +300,17 @@ public class SettingsActivity extends AppCompatActivity {
         if (!TextUtils.isEmpty(this.inputActivityDuration.getText())) {
             activityDuration = Integer.parseInt(this.inputActivityDuration.getText().toString());
         }
+
+        // Only save pregnancy/breastfeeding status if female
+        boolean isPregnant = false;
+        boolean isBreastfeeding = false;
+        if (gender.equals("Female")) {
+            isPregnant = this.checkPregnancy.isChecked();
+            isBreastfeeding = this.checkBreastfeeding.isChecked();
+        }
+
         this.dataManager.saveUserProfile(weight, age, gender, this.selectedActivity, this.selectedClimate,
-                height, bodyFat, activityDuration);
+                height, bodyFat, activityDuration, isPregnant, isBreastfeeding);
         this.dataManager.saveDailyGoal(this.calculatedGoal);
     }
 
@@ -237,7 +325,7 @@ public class SettingsActivity extends AppCompatActivity {
             this.inputCustomGoal.setError("Please enter a realistic goal (500-10000 ml)");
             return;
         }
-        if (validateInputs()) {
+        if (validateInputs() && validateGenderConditions()) {
             saveProfile();
             Intent resultIntent = new Intent();
             resultIntent.putExtra("DAILY_GOAL", this.calculatedGoal);
@@ -245,7 +333,6 @@ public class SettingsActivity extends AppCompatActivity {
             finish();
         }
     }
-
 
     private void calculateHydration() {
         if (!validateInputs()) return;
@@ -259,6 +346,11 @@ public class SettingsActivity extends AppCompatActivity {
         }
         if (age < 1 || age > 120) {
             this.inputAge.setError("Please enter a realistic age (1-120 years)");
+            return;
+        }
+
+        // Validate gender-specific conditions
+        if (!validateGenderConditions()) {
             return;
         }
 
@@ -289,8 +381,15 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         boolean isMale = this.radioMale.isChecked();
-        boolean isPregnant = this.checkPregnancy.isChecked();
-        boolean isBreastfeeding = this.checkBreastfeeding.isChecked();
+        boolean isPregnant = false;
+        boolean isBreastfeeding = false;
+
+        // Only consider pregnancy/breastfeeding if female
+        if (!isMale) {
+            isPregnant = this.checkPregnancy.isChecked();
+            isBreastfeeding = this.checkBreastfeeding.isChecked();
+        }
+
         boolean hasFever = this.checkFever.isChecked();
         boolean excessiveSweating = this.checkExcessiveSweating.isChecked();
         boolean highUrine = this.checkHighUrine.isChecked();

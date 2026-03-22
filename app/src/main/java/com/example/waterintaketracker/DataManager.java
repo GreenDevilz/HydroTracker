@@ -26,6 +26,8 @@ public class DataManager {
     private static final String KEY_USER_HEIGHT = "user_height";
     private static final String KEY_USER_BODY_FAT = "user_body_fat";
     private static final String KEY_USER_ACTIVITY_DURATION = "user_activity_duration";
+    private static final String KEY_USER_PREGNANT = "user_pregnant";
+    private static final String KEY_USER_BREASTFEEDING = "user_breastfeeding";
     private static final int MAX_HISTORY_DAYS = 30;
 
     private final SharedPreferences preferences;
@@ -37,6 +39,7 @@ public class DataManager {
         this.editor = this.preferences.edit();
     }
 
+    // Daily goal methods
     public void saveDailyGoal(int goal) {
         this.editor.putInt(KEY_DAILY_GOAL, goal).apply();
     }
@@ -45,6 +48,7 @@ public class DataManager {
         return this.preferences.getInt(KEY_DAILY_GOAL, 2500);
     }
 
+    // Current intake methods
     public int getCurrentIntake() {
         String today = getTodayDate();
         String lastDate = this.preferences.getString(KEY_LAST_DATE, "");
@@ -98,6 +102,7 @@ public class DataManager {
         this.editor.putInt(KEY_DAILY_GOAL, newGoal).apply();
     }
 
+    // History methods
     private void saveSpecificDayToHistory(String date, int intake, int goal) {
         List<HistoryEntry> history = getHistory();
         boolean found = false;
@@ -174,6 +179,7 @@ public class DataManager {
         return total / last7.size();
     }
 
+    // App install date methods
     public void saveAppInstallDate(long date) {
         this.editor.putLong(KEY_APP_INSTALL_DATE, date).apply();
     }
@@ -182,8 +188,9 @@ public class DataManager {
         return this.preferences.getLong(KEY_APP_INSTALL_DATE, 0L);
     }
 
+    // User profile save method (all settings)
     public void saveUserProfile(float weight, int age, String gender, String activityLevel, String climate,
-                                int height, float bodyFat, int activityDuration) {
+                                int height, float bodyFat, int activityDuration, boolean isPregnant, boolean isBreastfeeding) {
         this.editor.putFloat(KEY_USER_WEIGHT, weight);
         this.editor.putInt(KEY_USER_AGE, age);
         this.editor.putString(KEY_USER_GENDER, gender);
@@ -192,19 +199,65 @@ public class DataManager {
         this.editor.putInt(KEY_USER_HEIGHT, height);
         this.editor.putFloat(KEY_USER_BODY_FAT, bodyFat);
         this.editor.putInt(KEY_USER_ACTIVITY_DURATION, activityDuration);
+
+        // Only save pregnancy/breastfeeding states for females
+        if (gender.equals("Female")) {
+            this.editor.putBoolean(KEY_USER_PREGNANT, isPregnant);
+            this.editor.putBoolean(KEY_USER_BREASTFEEDING, isBreastfeeding);
+        } else {
+            this.editor.putBoolean(KEY_USER_PREGNANT, false);
+            this.editor.putBoolean(KEY_USER_BREASTFEEDING, false);
+        }
         this.editor.apply();
     }
 
-    public float getUserWeight() { return this.preferences.getFloat(KEY_USER_WEIGHT, 70.0f); }
-    public int getUserAge() { return this.preferences.getInt(KEY_USER_AGE, 30); }
-    public String getUserGender() { return this.preferences.getString(KEY_USER_GENDER, "Male"); }
-    public String getActivityLevel() { return this.preferences.getString(KEY_ACTIVITY_LEVEL, "Moderate"); }
-    public String getClimate() { return this.preferences.getString(KEY_CLIMATE, "Moderate"); }
-    public int getUserHeight() { return this.preferences.getInt(KEY_USER_HEIGHT, 0); }
-    public float getUserBodyFat() { return this.preferences.getFloat(KEY_USER_BODY_FAT, 0f); }
-    public int getUserActivityDuration() { return this.preferences.getInt(KEY_USER_ACTIVITY_DURATION, 0); }
-    public boolean hasUserProfile() { return this.preferences.contains(KEY_USER_WEIGHT); }
+    // User profile getter methods
+    public float getUserWeight() {
+        return this.preferences.getFloat(KEY_USER_WEIGHT, 70.0f);
+    }
 
+    public int getUserAge() {
+        return this.preferences.getInt(KEY_USER_AGE, 30);
+    }
+
+    public String getUserGender() {
+        return this.preferences.getString(KEY_USER_GENDER, "Male");
+    }
+
+    public String getActivityLevel() {
+        return this.preferences.getString(KEY_ACTIVITY_LEVEL, "Moderate");
+    }
+
+    public String getClimate() {
+        return this.preferences.getString(KEY_CLIMATE, "Moderate");
+    }
+
+    public int getUserHeight() {
+        return this.preferences.getInt(KEY_USER_HEIGHT, 0);
+    }
+
+    public float getUserBodyFat() {
+        return this.preferences.getFloat(KEY_USER_BODY_FAT, 0f);
+    }
+
+    public int getUserActivityDuration() {
+        return this.preferences.getInt(KEY_USER_ACTIVITY_DURATION, 0);
+    }
+
+    // Pregnancy and breastfeeding getter methods
+    public boolean isUserPregnant() {
+        return this.preferences.getBoolean(KEY_USER_PREGNANT, false);
+    }
+
+    public boolean isUserBreastfeeding() {
+        return this.preferences.getBoolean(KEY_USER_BREASTFEEDING, false);
+    }
+
+    public boolean hasUserProfile() {
+        return this.preferences.contains(KEY_USER_WEIGHT);
+    }
+
+    // Helper method
     private String getTodayDate() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         return sdf.format(new Date());
