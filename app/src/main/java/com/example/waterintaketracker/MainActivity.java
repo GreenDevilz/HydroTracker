@@ -1,5 +1,6 @@
 package com.example.waterintaketracker;
 
+import java.util.Arrays;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
@@ -40,7 +41,6 @@ import java.util.Stack;
 public class MainActivity extends AppCompatActivity {
     private static final int FACTS_PER_DAY = 5;
     private static final long FACT_ROTATION_INTERVAL = 30000;
-    private static final int MAX_UNDO_STACK = 10;
     private static final int PRESS_AMOUNT_ML = 50;
     private static final int PRESS_INTERVAL_MS = 150;
     private static final int PERMISSION_REQUEST_CODE = 1001;
@@ -194,21 +194,43 @@ public class MainActivity extends AppCompatActivity {
         this.dayCounter = ((int) (daysSince % 8)) + 1;
     }
 
+    private List<String> remainingFacts = new ArrayList<>();
+
     private void selectTodaysFacts() {
+        // Initialize remainingFacts if empty (first run)
+        if (remainingFacts.isEmpty()) {
+            remainingFacts = new ArrayList<>(Arrays.asList(this.allFacts));
+        }
+
+        // Calculate how many facts we need to select
+        int numToSelect = Math.min(FACTS_PER_DAY, this.allFacts.length);
+
+        // Refill if we don't have enough to meet today's selection
+        if (remainingFacts.size() < numToSelect) {
+            remainingFacts = new ArrayList<>(Arrays.asList(this.allFacts));
+        }
+
         Random random = new Random();
         Set<Integer> selectedIndices = new HashSet<>();
         this.todaysFacts.clear();
         random.setSeed(((long) this.dayCounter) * 1000);
-        
-        int availableFacts = this.allFacts.length;
-        int numToSelect = Math.min(FACTS_PER_DAY, availableFacts);
-        
+
+        // Select unique random indices from remainingFacts
         while (selectedIndices.size() < numToSelect) {
-            int index = random.nextInt(availableFacts);
+            int index = random.nextInt(remainingFacts.size());
             if (selectedIndices.add(index)) {
-                this.todaysFacts.add(this.allFacts[index]);
+                String selectedFact = remainingFacts.get(index);
+                this.todaysFacts.add(selectedFact);
             }
         }
+
+        // Remove selected facts from remainingFacts (in reverse order to avoid index issues)
+        List<Integer> sortedIndices = new ArrayList<>(selectedIndices);
+        sortedIndices.sort((a, b) -> b - a);
+        for (int index : sortedIndices) {
+            remainingFacts.remove(index);
+        }
+
         this.currentFactIndex = 0;
     }
 
@@ -408,10 +430,8 @@ public class MainActivity extends AppCompatActivity {
     public void addWater(int amount) {
         this.isUndoing = false;
         this.currentIntake += amount;
-        this.lastAdditions.push(amount);
-        while (this.lastAdditions.size() > MAX_UNDO_STACK) {
-            this.lastAdditions.remove(0);
-        }
+        this.lastAdditions.push(amount);  // No size limit anymore
+        // Remove the while loop that was limiting size
         this.dataManager.saveCurrentIntake(this.currentIntake);
         updateDisplay();
         updateUndoButtonState();
