@@ -23,6 +23,9 @@ public class DataManager {
     private static final String KEY_USER_GENDER = "user_gender";
     private static final String KEY_ACTIVITY_LEVEL = "activity_level";
     private static final String KEY_CLIMATE = "climate";
+    private static final String KEY_USER_HEIGHT = "user_height";
+    private static final String KEY_USER_BODY_FAT = "user_body_fat";
+    private static final String KEY_USER_ACTIVITY_DURATION = "user_activity_duration";
     private static final int MAX_HISTORY_DAYS = 30;
 
     private final SharedPreferences preferences;
@@ -139,7 +142,7 @@ public class DataManager {
         List<HistoryEntry> history = getHistory();
         String today = getTodayDate();
         int streak = 0;
-        
+
         int currentIntake = getCurrentIntake();
         int currentGoal = getDailyGoal();
         boolean todayMet = currentIntake >= currentGoal;
@@ -179,12 +182,16 @@ public class DataManager {
         return this.preferences.getLong(KEY_APP_INSTALL_DATE, 0L);
     }
 
-    public void saveUserProfile(float weight, int age, String gender, String activityLevel, String climate) {
+    public void saveUserProfile(float weight, int age, String gender, String activityLevel, String climate,
+                                int height, float bodyFat, int activityDuration) {
         this.editor.putFloat(KEY_USER_WEIGHT, weight);
         this.editor.putInt(KEY_USER_AGE, age);
         this.editor.putString(KEY_USER_GENDER, gender);
         this.editor.putString(KEY_ACTIVITY_LEVEL, activityLevel);
         this.editor.putString(KEY_CLIMATE, climate);
+        this.editor.putInt(KEY_USER_HEIGHT, height);
+        this.editor.putFloat(KEY_USER_BODY_FAT, bodyFat);
+        this.editor.putInt(KEY_USER_ACTIVITY_DURATION, activityDuration);
         this.editor.apply();
     }
 
@@ -193,6 +200,9 @@ public class DataManager {
     public String getUserGender() { return this.preferences.getString(KEY_USER_GENDER, "Male"); }
     public String getActivityLevel() { return this.preferences.getString(KEY_ACTIVITY_LEVEL, "Moderate"); }
     public String getClimate() { return this.preferences.getString(KEY_CLIMATE, "Moderate"); }
+    public int getUserHeight() { return this.preferences.getInt(KEY_USER_HEIGHT, 0); }
+    public float getUserBodyFat() { return this.preferences.getFloat(KEY_USER_BODY_FAT, 0f); }
+    public int getUserActivityDuration() { return this.preferences.getInt(KEY_USER_ACTIVITY_DURATION, 0); }
     public boolean hasUserProfile() { return this.preferences.contains(KEY_USER_WEIGHT); }
 
     private String getTodayDate() {

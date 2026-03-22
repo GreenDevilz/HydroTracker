@@ -18,6 +18,7 @@ import android.widget.ScrollView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingsActivity extends AppCompatActivity {
+
     private Button btnCalculate;
     private Button btnSetCustomGoal;
     private CheckBox checkBreastfeeding;
@@ -32,6 +33,9 @@ public class SettingsActivity extends AppCompatActivity {
     private EditText inputAge;
     private EditText inputCustomGoal;
     private EditText inputWeight;
+    private EditText inputHeight;
+    private EditText inputBodyFat;
+    private EditText inputActivityDuration;
     private RadioButton radioMale;
     private LinearLayout restrictedModeCard;
     private LinearLayout resultCard;
@@ -57,6 +61,9 @@ public class SettingsActivity extends AppCompatActivity {
     private void initializeViews() {
         this.inputWeight = findViewById(R.id.inputWeight);
         this.inputAge = findViewById(R.id.inputAge);
+        this.inputHeight = findViewById(R.id.inputHeight);
+        this.inputBodyFat = findViewById(R.id.inputBodyFat);
+        this.inputActivityDuration = findViewById(R.id.inputActivityDuration);
         this.radioMale = findViewById(R.id.radioMale);
         this.spinnerActivity = findViewById(R.id.spinnerActivity);
         this.spinnerClimate = findViewById(R.id.spinnerClimate);
@@ -74,7 +81,7 @@ public class SettingsActivity extends AppCompatActivity {
         this.btnCalculate = findViewById(R.id.btnCalculate);
         this.resultCard = findViewById(R.id.resultCard);
         this.txtRecommendedGoal = findViewById(R.id.txtRecommendedGoal);
-        
+
         setupRestrictedModeListener();
     }
 
@@ -95,13 +102,22 @@ public class SettingsActivity extends AppCompatActivity {
         if (this.dataManager.hasUserProfile()) {
             this.inputWeight.setText(String.valueOf((int) this.dataManager.getUserWeight()));
             this.inputAge.setText(String.valueOf(this.dataManager.getUserAge()));
+            if (this.dataManager.getUserHeight() > 0) {
+                this.inputHeight.setText(String.valueOf(this.dataManager.getUserHeight()));
+            }
+            if (this.dataManager.getUserBodyFat() > 0) {
+                this.inputBodyFat.setText(String.valueOf(this.dataManager.getUserBodyFat()));
+            }
+            if (this.dataManager.getUserActivityDuration() > 0) {
+                this.inputActivityDuration.setText(String.valueOf(this.dataManager.getUserActivityDuration()));
+            }
             if ("Female".equals(this.dataManager.getUserGender())) {
                 RadioButton radioFemale = findViewById(R.id.radioFemale);
                 if (radioFemale != null) radioFemale.setChecked(true);
             } else {
                 this.radioMale.setChecked(true);
             }
-            
+
             String savedActivity = this.dataManager.getActivityLevel();
             String[] activityValues = {"Sedentary", "Light", "Moderate", "Very Active", "Athlete"};
             for (int i = 0; i < activityValues.length; i++) {
@@ -111,7 +127,7 @@ public class SettingsActivity extends AppCompatActivity {
                     break;
                 }
             }
-            
+
             String savedClimate = this.dataManager.getClimate();
             String[] climateValues = {"Cool", "Moderate", "Hot"};
             for (int i = 0; i < climateValues.length; i++) {
@@ -162,7 +178,7 @@ public class SettingsActivity extends AppCompatActivity {
         findViewById(R.id.btnCancel).setOnClickListener(v -> finish());
         this.btnCalculate.setOnClickListener(v -> calculateHydration());
         this.btnSetCustomGoal.setOnClickListener(v -> setCustomGoal());
-        
+
         Button btnApply = findViewById(R.id.btnApply);
         if (btnApply != null) {
             btnApply.setOnClickListener(v -> {
@@ -193,7 +209,20 @@ public class SettingsActivity extends AppCompatActivity {
         float weight = Float.parseFloat(this.inputWeight.getText().toString());
         int age = Integer.parseInt(this.inputAge.getText().toString());
         String gender = this.radioMale.isChecked() ? "Male" : "Female";
-        this.dataManager.saveUserProfile(weight, age, gender, this.selectedActivity, this.selectedClimate);
+        int height = 0;
+        float bodyFat = 0f;
+        int activityDuration = 0;
+        if (!TextUtils.isEmpty(this.inputHeight.getText())) {
+            height = Integer.parseInt(this.inputHeight.getText().toString());
+        }
+        if (!TextUtils.isEmpty(this.inputBodyFat.getText())) {
+            bodyFat = Float.parseFloat(this.inputBodyFat.getText().toString());
+        }
+        if (!TextUtils.isEmpty(this.inputActivityDuration.getText())) {
+            activityDuration = Integer.parseInt(this.inputActivityDuration.getText().toString());
+        }
+        this.dataManager.saveUserProfile(weight, age, gender, this.selectedActivity, this.selectedClimate,
+                height, bodyFat, activityDuration);
         this.dataManager.saveDailyGoal(this.calculatedGoal);
     }
 
@@ -217,6 +246,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+
     private void calculateHydration() {
         if (!validateInputs()) return;
 
@@ -232,18 +262,32 @@ public class SettingsActivity extends AppCompatActivity {
             return;
         }
 
-        float baseGoal = getBaseGoal(weight, age);
-        this.calculatedGoal = Math.round(baseGoal / 50.0f) * 50;
-        this.txtRecommendedGoal.setText(getString(R.string.format_ml, this.calculatedGoal));
-        this.resultCard.setVisibility(View.VISIBLE);
-
-        ScrollView scrollView = findViewById(R.id.scrollView);
-        if (scrollView != null) {
-            scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+        // Optional fields
+        Integer height = null;
+        if (!TextUtils.isEmpty(this.inputHeight.getText())) {
+            height = Integer.parseInt(this.inputHeight.getText().toString());
+            if (height < 50 || height > 300) {
+                this.inputHeight.setError("Height must be between 50 and 300 cm");
+                return;
+            }
         }
-    }
+        Float bodyFat = null;
+        if (!TextUtils.isEmpty(this.inputBodyFat.getText())) {
+            bodyFat = Float.parseFloat(this.inputBodyFat.getText().toString());
+            if (bodyFat < 0 || bodyFat > 60) {
+                this.inputBodyFat.setError("Body fat % must be between 0 and 60");
+                return;
+            }
+        }
+        Integer activityDuration = null;
+        if (!TextUtils.isEmpty(this.inputActivityDuration.getText())) {
+            activityDuration = Integer.parseInt(this.inputActivityDuration.getText().toString());
+            if (activityDuration < 0 || activityDuration > 600) {
+                this.inputActivityDuration.setError("Duration must be 0–600 minutes");
+                return;
+            }
+        }
 
-    private float getBaseGoal(float weight, int age) {
         boolean isMale = this.radioMale.isChecked();
         boolean isPregnant = this.checkPregnancy.isChecked();
         boolean isBreastfeeding = this.checkBreastfeeding.isChecked();
@@ -253,36 +297,90 @@ public class SettingsActivity extends AppCompatActivity {
         boolean highProtein = this.checkHighProtein.isChecked();
         boolean creatine = this.checkCreatine.isChecked();
 
-        float multiplier = 1.0f;
-        float base = (isMale ? 35.0f : 31.0f) * weight;
+        float totalWater = getTotalWaterRequirement(weight, age, isMale, height, bodyFat,
+                selectedActivity, activityDuration, selectedClimate,
+                excessiveSweating, highUrine, highProtein,
+                isPregnant, isBreastfeeding, hasFever, creatine);
 
-        if (age > 65) multiplier *= 0.85f;
-        else if (age > 50) multiplier *= 0.9f;
-        else if (age > 30) multiplier *= 0.95f;
+        // Account for food water (internal adjustment)
+        float foodWaterFactor = 0.2f; // assume 20% from food
+        float drinkingGoal = totalWater * (1 - foodWaterFactor);
 
-        switch (this.selectedActivity) {
-            case "Light": multiplier *= 1.2f; break;
-            case "Moderate": multiplier *= 1.4f; break;
-            case "Very Active": multiplier *= 1.6f; break;
-            case "Athlete": multiplier *= 2.0f; break;
+        this.calculatedGoal = Math.round(drinkingGoal / 50.0f) * 50;
+        this.txtRecommendedGoal.setText(getString(R.string.format_ml, this.calculatedGoal));
+        this.resultCard.setVisibility(View.VISIBLE);
+
+        ScrollView scrollView = findViewById(R.id.scrollView);
+        if (scrollView != null) {
+            scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+        }
+    }
+
+    private float getTotalWaterRequirement(float weight, int age, boolean isMale,
+                                           Integer height, Float bodyFat,
+                                           String activityLevel, Integer activityDuration,
+                                           String climate,
+                                           boolean excessiveSweating, boolean highUrine, boolean highProtein,
+                                           boolean isPregnant, boolean isBreastfeeding, boolean hasFever, boolean creatine) {
+        // Base water from all sources (ml)
+        float baseWater;
+
+        // Use body fat if provided -> lean body mass based
+        if (bodyFat != null && bodyFat > 0) {
+            float leanMass = weight * (1 - bodyFat / 100f);
+            // 40 ml per kg lean mass (typical range 40-45)
+            baseWater = leanMass * 40f;
+        }
+        // Else use height if provided -> body surface area based
+        else if (height != null && height > 0) {
+            // Mosteller BSA formula: sqrt( (weight * height) / 3600 )
+            double bsa = Math.sqrt((weight * height) / 3600.0);
+            // 1500 ml per m² BSA (typical range 1500-2000)
+            baseWater = (float) (bsa * 1500f);
+        }
+        // Else fall back to weight-based
+        else {
+            baseWater = (isMale ? 35f : 31f) * weight;
         }
 
-        switch (this.selectedClimate) {
+        // Age adjustment
+        if (age > 65) baseWater *= 0.85f;
+        else if (age > 50) baseWater *= 0.9f;
+        else if (age > 30) baseWater *= 0.95f;
+
+        // Activity level multiplier
+        float activityMultiplier = 1.0f;
+        switch (activityLevel) {
+            case "Light": activityMultiplier = 1.2f; break;
+            case "Moderate": activityMultiplier = 1.4f; break;
+            case "Very Active": activityMultiplier = 1.6f; break;
+            case "Athlete": activityMultiplier = 2.0f; break;
+        }
+        baseWater *= activityMultiplier;
+
+        // Activity duration extra (ml per minute of moderate activity)
+        if (activityDuration != null && activityDuration > 0) {
+            baseWater += activityDuration * 10f; // 10 ml per minute
+        }
+
+        // Climate adjustment
+        switch (climate) {
             case "Cool": break;
-            case "Hot": multiplier *= 1.3f; break;
-            default: multiplier *= 1.1f; break;
+            case "Hot": baseWater *= 1.3f; break;
+            default: baseWater *= 1.1f; break;
         }
 
-        if (excessiveSweating) multiplier *= 1.2f;
-        if (highUrine) multiplier *= 1.15f;
-        if (highProtein) multiplier *= 1.1f;
+        // Health conditions
+        if (excessiveSweating) baseWater *= 1.2f;
+        if (highUrine) baseWater *= 1.15f;
+        if (highProtein) baseWater *= 1.1f;
 
-        float goal = base * multiplier;
-        if (isPregnant) goal += 300.0f;
-        if (isBreastfeeding) goal += 700.0f;
-        if (hasFever) goal += 500.0f;
-        if (creatine) goal += 500.0f;
+        // Special conditions (additive)
+        if (isPregnant) baseWater += 300f;
+        if (isBreastfeeding) baseWater += 700f;
+        if (hasFever) baseWater += 500f;
+        if (creatine) baseWater += 500f;
 
-        return goal;
+        return baseWater;
     }
 }

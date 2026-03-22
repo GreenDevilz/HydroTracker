@@ -3,6 +3,8 @@
     <string name="app_name">Hydro Tracker</string>
     <string name="app_display_name">Hydro Tracker</string>
 
+
+
     <!-- Activity Levels -->
     <string name="activity_athlete">Athlete (2x/day)</string>
     <string name="activity_light">Light (1–3x/week)</string>
@@ -115,6 +117,13 @@
     <string name="did_you_know">DID YOU KNOW?</string>
     <string name="tap_for_next">tap for next</string>
     <string name="fact_bulb_emoji">💡</string>
+
+    <string name="label_height">Height (cm, optional)</string>
+    <string name="hint_height">e.g., 175</string>
+    <string name="label_body_fat">Body Fat % (optional)</string>
+    <string name="hint_body_fat">e.g., 18.5</string>
+    <string name="label_activity_duration">Daily Activity Duration (minutes, optional)</string>
+    <string name="hint_activity_duration">e.g., 45</string>
 
     <!-- Facts -->
     <string name="fact_1">🫀 Your heart is 73% water — staying hydrated helps maintain healthy blood pressure.</string>

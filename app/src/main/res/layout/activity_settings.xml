@@ -10,6 +10,7 @@
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="72dp"
@@ -28,6 +29,7 @@
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"/>
         </RelativeLayout>
+
         <TextView
             android:textSize="@dimen/text_size_h2"
             android:textStyle="bold"
@@ -36,6 +38,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_medium"
             android:text="@string/section_personal"/>
+
         <LinearLayout
             android:orientation="vertical"
             android:background="?attr/cardBackground"
@@ -44,6 +47,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_large"
             android:elevation="@dimen/elevation_medium">
+
+            <!-- Weight -->
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
@@ -65,6 +70,8 @@
                 android:inputType="numberDecimal"
                 android:importantForAccessibility="yes"
                 android:autofillHints="none"/>
+
+            <!-- Age -->
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
@@ -86,6 +93,56 @@
                 android:inputType="number"
                 android:importantForAccessibility="yes"
                 android:autofillHints="none"/>
+
+            <!-- Height (optional) -->
+            <TextView
+                android:textSize="@dimen/text_size_body"
+                android:textColor="?attr/textPrimary"
+                android:id="@+id/lblHeight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/margin_small"
+                android:text="@string/label_height"
+                android:labelFor="@+id/inputHeight"/>
+            <EditText
+                android:textColor="?attr/textPrimary"
+                android:textColorHint="?attr/textSecondary"
+                android:id="@+id/inputHeight"
+                android:background="@drawable/edit_text_background"
+                android:padding="@dimen/padding_medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/margin_standard"
+                android:inputType="number"
+                android:hint="@string/hint_height"
+                android:importantForAccessibility="yes"
+                android:autofillHints="none"/>
+
+            <!-- Body Fat (optional) -->
+            <TextView
+                android:textSize="@dimen/text_size_body"
+                android:textColor="?attr/textPrimary"
+                android:id="@+id/lblBodyFat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/margin_small"
+                android:text="@string/label_body_fat"
+                android:labelFor="@+id/inputBodyFat"/>
+            <EditText
+                android:textColor="?attr/textPrimary"
+                android:textColorHint="?attr/textSecondary"
+                android:id="@+id/inputBodyFat"
+                android:background="@drawable/edit_text_background"
+                android:padding="@dimen/padding_medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/margin_standard"
+                android:inputType="numberDecimal"
+                android:hint="@string/hint_body_fat"
+                android:importantForAccessibility="yes"
+                android:autofillHints="none"/>
+
+            <!-- Gender -->
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
@@ -117,6 +174,7 @@
                     android:layout_weight="1"/>
             </RadioGroup>
         </LinearLayout>
+
         <TextView
             android:textSize="@dimen/text_size_h2"
             android:textStyle="bold"
@@ -125,6 +183,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_medium"
             android:text="@string/section_lifestyle"/>
+
         <LinearLayout
             android:orientation="vertical"
             android:background="?attr/cardBackground"
@@ -133,6 +192,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_large"
             android:elevation="@dimen/elevation_medium">
+
+            <!-- Activity Level Spinner -->
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
@@ -150,6 +211,32 @@
                 android:layout_height="@dimen/spinner_height"
                 android:layout_marginBottom="@dimen/margin_standard"
                 android:contentDescription="@string/label_activity_level"/>
+
+            <!-- Activity Duration (optional) -->
+            <TextView
+                android:textSize="@dimen/text_size_body"
+                android:textColor="?attr/textPrimary"
+                android:id="@+id/lblActivityDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/margin_small"
+                android:text="@string/label_activity_duration"
+                android:labelFor="@+id/inputActivityDuration"/>
+            <EditText
+                android:textColor="?attr/textPrimary"
+                android:textColorHint="?attr/textSecondary"
+                android:id="@+id/inputActivityDuration"
+                android:background="@drawable/edit_text_background"
+                android:padding="@dimen/padding_medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/margin_standard"
+                android:inputType="number"
+                android:hint="@string/hint_activity_duration"
+                android:importantForAccessibility="yes"
+                android:autofillHints="none"/>
+
+            <!-- Climate Spinner -->
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
@@ -168,6 +255,7 @@
                 android:layout_marginBottom="@dimen/margin_standard"
                 android:contentDescription="@string/label_climate"/>
         </LinearLayout>
+
         <TextView
             android:textSize="@dimen/text_size_h2"
             android:textStyle="bold"
@@ -176,6 +264,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_medium"
             android:text="@string/section_special"/>
+
         <LinearLayout
             android:orientation="vertical"
             android:background="?attr/cardBackground"
@@ -184,6 +273,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_large"
             android:elevation="@dimen/elevation_medium">
+
             <CheckBox
                 android:textColor="?attr/textPrimary"
                 android:id="@+id/checkPregnancy"
@@ -243,6 +333,7 @@
                 android:checked="false"
                 android:text="@string/condition_heart_kidney"/>
         </LinearLayout>
+
         <LinearLayout
             android:orientation="vertical"
             android:id="@+id/restrictedModeCard"
@@ -314,6 +405,7 @@
                     style="@style/Widget.AppCompat.Button.Colored"/>
             </LinearLayout>
         </LinearLayout>
+
         <LinearLayout
             android:orientation="vertical"
             android:id="@+id/resultCard"
@@ -351,6 +443,7 @@
                 android:backgroundTint="@color/blue_600"
                 style="@style/Widget.Material3.Button"/>
         </LinearLayout>
+
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
