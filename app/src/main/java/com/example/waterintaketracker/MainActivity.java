@@ -1,6 +1,8 @@
 package com.example.waterintaketracker;
 
 import java.util.Arrays;
+
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
@@ -529,15 +531,19 @@ public class MainActivity extends AppCompatActivity {
         this.waterBottleView.setVisibility(orientation == Configuration.ORIENTATION_LANDSCAPE ? View.GONE : View.VISIBLE);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setupBottlePressListener() {
         if (this.waterBottleView == null) return;
+
+        // Use the new custom touch listener instead of OnTouchListener
+        this.waterBottleView.setOnBottleTouchListener(() -> {
+            this.isPressing = true;
+            startPressing();
+        });
+
+        // We need to handle the UP event differently now
         this.waterBottleView.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    v.performClick();
-                    this.isPressing = true;
-                    startPressing();
-                    return true;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     this.isPressing = false;

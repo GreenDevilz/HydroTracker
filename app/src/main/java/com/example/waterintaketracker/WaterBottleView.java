@@ -8,10 +8,14 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.graphics.Region;
 import android.graphics.Shader;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+
+import androidx.annotation.NonNull;
 
 public class WaterBottleView extends View {
     private static final float CAP_HEIGHT_RATIO = 0.08f;
@@ -25,6 +29,7 @@ public class WaterBottleView extends View {
     private final Path neckPath = new Path();
     private final Path capPath = new Path();
     private final Path highlightPath = new Path();
+    private final Region bottleRegion = new Region();
 
     private Paint bottlePaint;
     private Paint waterPaint;
@@ -42,6 +47,13 @@ public class WaterBottleView extends View {
     private ValueAnimator waveAnimator;
     private ValueAnimator waterAnimator;
     private ValueAnimator overflowAnimator;
+
+    // Add an interface for touch callbacks
+    public interface OnBottleTouchListener {
+        void onBottlePressed();
+    }
+
+    private OnBottleTouchListener touchListener;
 
     private static class Particle {
         boolean active = false;
@@ -137,29 +149,36 @@ public class WaterBottleView extends View {
 
         float availableWidth = Math.max(0, (w - getPaddingLeft() - getPaddingRight()));
         float availableHeight = Math.max(0, (h - getPaddingTop() - getPaddingBottom() - 40));
-        
+
         float bottleHeight = availableHeight * 0.85f;
         float bottleWidth = bottleHeight * 0.6f;
-        
+
         float bottleLeft = getPaddingLeft() + (availableWidth - bottleWidth) / 2.0f;
         float bottleBottom = getPaddingTop() + availableHeight;
         float bottleTop = bottleBottom - bottleHeight;
-        
+
         this.bottleBody.set(bottleLeft, bottleTop, bottleLeft + bottleWidth, bottleBottom);
-        
+
         this.bottlePath.reset();
         this.bottlePath.addRoundRect(this.bottleBody, 50.0f, 50.0f, Path.Direction.CW);
-        
-        this.waterPaint.setShader(new LinearGradient(0, bottleBottom, 0, bottleTop, 
+
+        // Create region from path for touch detection
+        Path tempPath = new Path();
+        tempPath.addRoundRect(this.bottleBody, 50.0f, 50.0f, Path.Direction.CW);
+        Region clipRegion = new Region();
+        clipRegion.set(0, 0, w, h);
+        this.bottleRegion.setPath(tempPath, clipRegion);
+
+        this.waterPaint.setShader(new LinearGradient(0, bottleBottom, 0, bottleTop,
                 Color.parseColor("#38BDF8"), Color.parseColor("#0284C7"), Shader.TileMode.CLAMP));
 
         float neckWidth = bottleWidth * NECK_WIDTH_RATIO;
         float neckLeft = this.bottleBody.centerX() - neckWidth / 2.0f;
         float capBottom = this.bottleBody.top - (bottleHeight * NECK_HEIGHT_RATIO);
-        
+
         this.neckPath.reset();
         this.neckPath.addRoundRect(neckLeft, capBottom, neckLeft + neckWidth, this.bottleBody.top, 15.0f, 15.0f, Path.Direction.CW);
-        
+
         float capWidth = neckWidth * 1.3f;
         float capLeft = this.bottleBody.centerX() - capWidth / 2.0f;
         this.capPath.reset();
@@ -168,6 +187,42 @@ public class WaterBottleView extends View {
         this.highlightPath.reset();
         this.highlightPath.moveTo(this.bottleBody.left + 26.0f, this.bottleBody.top + 46.0f);
         this.highlightPath.lineTo(this.bottleBody.left + 26.0f, this.bottleBody.bottom - 45.0f);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        float x = event.getX();
+        float y = event.getY();
+
+        // Check if the touch point is inside the bottle shape
+        boolean isInsideBottle = bottleRegion.contains((int) x, (int) y);
+
+        // Handle touch based on whether it's inside the bottle
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if (isInsideBottle && touchListener != null) {
+                    touchListener.onBottlePressed();
+                    performClick();
+                    return true;
+                }
+                return false;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                // You can add logic here for UP if needed
+                return isInsideBottle && touchListener != null;
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
+
+    // Set the touch listener
+    public void setOnBottleTouchListener(OnBottleTouchListener listener) {
+        this.touchListener = listener;
     }
 
     public void setWaterLevel(float level, boolean animate) {
@@ -209,7 +264,7 @@ public class WaterBottleView extends View {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
         if (this.bottleBody.isEmpty()) return;
 
@@ -233,12 +288,12 @@ public class WaterBottleView extends View {
 
         canvas.drawPath(this.bottlePath, this.bottlePaint);
         canvas.drawPath(this.neckPath, this.bottlePaint);
-        
+
         canvas.save();
         canvas.clipPath(this.bottlePath);
         canvas.drawPath(this.highlightPath, this.highlightPaint);
         canvas.restore();
-        
+
         canvas.drawPath(this.capPath, this.capPaint);
         canvas.drawPath(this.capPath, this.bottlePaint);
 
@@ -255,10 +310,5 @@ public class WaterBottleView extends View {
             this.particlesActive = anyActive;
             if (this.particlesActive) invalidate();
         }
-    }
-
-    @Override
-    public boolean performClick() {
-        return super.performClick();
     }
 }
