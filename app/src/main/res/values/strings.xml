@@ -3,7 +3,12 @@
     <string name="app_name">Hydro Tracker</string>
     <string name="app_display_name">Hydro Tracker</string>
 
-
+    <!-- Custom Reminder Messages -->
+    <string name="reminder_custom_title">Custom Reminder Message</string>
+    <string name="reminder_custom_hint">Enter your own reminder text…</string>
+    <string name="reminder_default">💧 A quick sip to keep you going.</string>
+    <string name="reminder_use_custom">Use custom message</string>
+    <string name="reminder_notification_title">Time to drink water!</string>
 
     <!-- Activity Levels -->
     <string name="activity_athlete">Athlete (2x/day)</string>

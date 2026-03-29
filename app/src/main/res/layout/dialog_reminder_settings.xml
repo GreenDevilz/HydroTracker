@@ -96,4 +96,60 @@
             android:text="@string/label_hour_suffix"
             android:layout_marginStart="@dimen/margin_small"/>
     </LinearLayout>
+    <!-- Custom Reminder Message -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/reminder_custom_title"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="?attr/textPrimary"
+        android:layout_marginTop="@dimen/margin_medium"
+        android:layout_marginBottom="@dimen/margin_small"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/cardBackground"
+        android:padding="@dimen/padding_medium"
+        android:layout_marginBottom="@dimen/margin_medium">
+
+        <CheckBox
+            android:id="@+id/checkUseCustomMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/reminder_use_custom"
+            android:textColor="?attr/textPrimary"
+            android:padding="@dimen/padding_small"
+            android:layout_marginBottom="@dimen/margin_small"/>
+
+        <EditText
+            android:id="@+id/inputCustomMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/reminder_custom_hint"
+            android:padding="@dimen/padding_medium"
+            android:background="@drawable/edit_text_background"
+            android:textSize="14sp"
+            android:textColor="?attr/textPrimary"
+            android:textColorHint="?attr/textSecondary"
+            android:enabled="false"
+            android:inputType="textCapSentences|textMultiLine"
+            android:autofillHints="none"
+            android:minLines="2"
+            android:maxLines="3"
+            android:layout_marginBottom="@dimen/margin_small"/>
+
+        <TextView
+            android:id="@+id/txtMessagePreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/reminder_default"
+            android:textSize="13sp"
+            android:textColor="?attr/textPrimary"
+            android:padding="@dimen/padding_small"
+            android:background="@color/blue_50"
+            android:alpha="0.9"/>
+    </LinearLayout>
 </LinearLayout>

@@ -18,6 +18,30 @@ public class ReminderScheduler {
     private static final int DEFAULT_START_HOUR = 8;
     private static final int DEFAULT_END_HOUR = 22;
 
+    private static final String KEY_CUSTOM_MESSAGE = "custom_message";
+    private static final String KEY_USE_CUSTOM_MESSAGE = "use_custom_message";
+
+    public static void setUseCustomMessage(Context context, boolean use) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_REMINDER, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(KEY_USE_CUSTOM_MESSAGE, use).apply();
+    }
+
+    public static boolean useCustomMessage(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_REMINDER, Context.MODE_PRIVATE);
+        return prefs.getBoolean(KEY_USE_CUSTOM_MESSAGE, false);
+    }
+
+    public static void setCustomMessage(Context context, String message) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_REMINDER, Context.MODE_PRIVATE);
+        prefs.edit().putString(KEY_CUSTOM_MESSAGE, message).apply();
+    }
+
+    public static String getCustomMessage(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_REMINDER, Context.MODE_PRIVATE);
+        // Return empty string if no custom message is saved, allowing the hint to show in EditText
+        return prefs.getString(KEY_CUSTOM_MESSAGE, "");
+    }
+
     public static void scheduleReminders(Context context) {
         if (!isReminderEnabled(context)) {
             cancelAllReminders(context);

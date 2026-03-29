@@ -90,7 +90,7 @@ public class DataManager {
         List<HistoryEntry> history = getHistory();
         boolean found = false;
         for (int i = 0; i < history.size(); i++) {
-            if (history.get(i).getDate().equals(today)) {
+            if (history.get(i).getFormattedDate().equals(today)) {
                 history.set(i, new HistoryEntry(today, intake, goal));
                 found = true;
                 break;
@@ -112,7 +112,7 @@ public class DataManager {
         List<HistoryEntry> history = getHistory();
         boolean found = false;
         for (int i = 0; i < history.size(); i++) {
-            if (history.get(i).getDate().equals(date)) {
+            if (history.get(i).getFormattedDate().equals(date)) {
                 history.set(i, new HistoryEntry(date, intake, goal));
                 found = true;
                 break;
@@ -163,7 +163,7 @@ public class DataManager {
 
         for (int i = history.size() - 1; i >= 0; i--) {
             HistoryEntry entry = history.get(i);
-            if (!entry.getDate().equals(today)) {
+            if (!entry.getFormattedDate().equals(today)) {
                 if (entry.isGoalMet()) {
                     streak++;
                 } else {

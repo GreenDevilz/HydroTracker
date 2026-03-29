@@ -10,7 +10,6 @@ import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 import java.util.List;
 
-/* JADX INFO: loaded from: classes3.dex */
 public class HistoryAdapter extends BaseAdapter {
     private final HistoryActivity activity;
     private final List<HistoryEntry> historyList;
@@ -22,44 +21,47 @@ public class HistoryAdapter extends BaseAdapter {
         this.inflater = LayoutInflater.from(activity);
     }
 
-    @Override // android.widget.Adapter
+    @Override
     public int getCount() {
         return this.historyList.size();
     }
 
-    @Override // android.widget.Adapter
+    @Override
     public Object getItem(int position) {
         return this.historyList.get(position);
     }
 
-    @Override // android.widget.Adapter
+    @Override
     public long getItemId(int position) {
         return position;
     }
 
-    @Override // android.widget.Adapter
+    @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        int color;
         if (convertView == null) {
             convertView = this.inflater.inflate(R.layout.item_history, parent, false);
         }
+        
         HistoryEntry entry = this.historyList.get(position);
-        TextView dateText = (TextView) convertView.findViewById(R.id.item_date);
-        TextView intakeText = (TextView) convertView.findViewById(R.id.item_intake);
-        TextView goalText = (TextView) convertView.findViewById(R.id.item_goal);
-        ProgressBar progressBar = (ProgressBar) convertView.findViewById(R.id.item_progress);
+        
+        TextView dateText = convertView.findViewById(R.id.item_date);
+        TextView intakeText = convertView.findViewById(R.id.item_intake);
+        TextView goalText = convertView.findViewById(R.id.item_goal);
+        ProgressBar progressBar = convertView.findViewById(R.id.item_progress);
+
         dateText.setText(entry.getFormattedDate());
-        intakeText.setText(this.activity.getString(R.string.format_ml, new Object[]{Integer.valueOf(entry.getIntake())}));
-        goalText.setText(this.activity.getString(R.string.format_goal, new Object[]{Integer.valueOf(entry.getGoal())}));
+        intakeText.setText(this.activity.getString(R.string.format_ml, entry.getIntake()));
+        goalText.setText(this.activity.getString(R.string.format_goal, entry.getGoal()));
         progressBar.setProgress(entry.getPercentage());
-        boolean zIsGoalMet = entry.isGoalMet();
-        HistoryActivity historyActivity = this.activity;
-        if (zIsGoalMet) {
-            color = ContextCompat.getColor(historyActivity, android.R.color.holo_green_dark);
+
+        int color;
+        if (entry.isGoalMet()) {
+            color = ContextCompat.getColor(this.activity, android.R.color.holo_green_dark);
         } else {
-            color = ContextCompat.getColor(historyActivity, android.R.color.holo_blue_dark);
+            color = ContextCompat.getColor(this.activity, android.R.color.holo_blue_dark);
         }
         progressBar.getProgressDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+
         return convertView;
     }
 }

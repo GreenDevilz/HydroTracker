@@ -2,6 +2,10 @@ package com.example.waterintaketracker;
 
 import java.util.Arrays;
 
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
+import android.widget.CheckBox;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -168,7 +172,6 @@ public class MainActivity extends AppCompatActivity {
                 getString(R.string.fact_26),
                 getString(R.string.fact_27),
                 getString(R.string.fact_28),
-                getString(R.string.fact_29),
                 getString(R.string.fact_30),
                 getString(R.string.fact_31),
                 getString(R.string.fact_32),
@@ -283,11 +286,18 @@ public class MainActivity extends AppCompatActivity {
         final NumberPicker pickerStartHour = dialogView.findViewById(R.id.pickerStartHour);
         final NumberPicker pickerEndHour = dialogView.findViewById(R.id.pickerEndHour);
 
+        // Custom message views
+        final CheckBox checkUseCustomMessage = dialogView.findViewById(R.id.checkUseCustomMessage);
+        final EditText inputCustomMessage = dialogView.findViewById(R.id.inputCustomMessage);
+        final TextView txtMessagePreview = dialogView.findViewById(R.id.txtMessagePreview);
+
+        // Setup interval spinner
         String[] intervals = {"30 minutes", "1 hour", "2 hours", "3 hours", "4 hours"};
         ArrayAdapter<String> intervalAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, intervals);
         intervalAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerInterval.setAdapter(intervalAdapter);
 
+        // Load reminder settings
         switchReminders.setChecked(ReminderScheduler.isReminderEnabled(this));
         int currentInterval = ReminderScheduler.getReminderInterval(this);
         int intervalPosition;
@@ -296,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
         else if (currentInterval == 120) intervalPosition = 2;
         else if (currentInterval == 180) intervalPosition = 3;
         else if (currentInterval == 240) intervalPosition = 4;
-        else intervalPosition = 1; // Default 1 hour
+        else intervalPosition = 1;
         spinnerInterval.setSelection(intervalPosition);
 
         pickerStartHour.setMinValue(0);
@@ -309,6 +319,42 @@ public class MainActivity extends AppCompatActivity {
         pickerEndHour.setValue(ReminderScheduler.getEndHour(this));
         pickerEndHour.setWrapSelectorWheel(false);
 
+        // Load custom message settings
+        String customMessage = ReminderScheduler.getCustomMessage(this);
+        boolean useCustom = ReminderScheduler.useCustomMessage(this);
+
+        // EditText is always enabled to allow typing
+        inputCustomMessage.setEnabled(true);
+        // CRITICAL FIX: Only set text if it's NOT empty. If it is empty, don't touch it so the hint shows.
+        if (!customMessage.isEmpty()) {
+            inputCustomMessage.setText(customMessage);
+        }
+
+        // Checkbox logic: only enabled if there is text
+        boolean hasText = !customMessage.trim().isEmpty();
+        checkUseCustomMessage.setEnabled(hasText);
+        // Force unchecked if there's no text, even if pref was true
+        checkUseCustomMessage.setChecked(useCustom && hasText);
+        
+        updateMessagePreview(inputCustomMessage, txtMessagePreview, checkUseCustomMessage.isChecked());
+
+        // Listeners
+        checkUseCustomMessage.setOnCheckedChangeListener((buttonView, isChecked) -> updateMessagePreview(inputCustomMessage, txtMessagePreview, isChecked));
+
+        inputCustomMessage.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                boolean hasContent = !s.toString().trim().isEmpty();
+                checkUseCustomMessage.setEnabled(hasContent);
+                // If text is cleared, automatically uncheck the custom message option
+                if (!hasContent) {
+                    checkUseCustomMessage.setChecked(false);
+                }
+                updateMessagePreview(inputCustomMessage, txtMessagePreview, checkUseCustomMessage.isChecked());
+            }
+        });
+
         new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setPositiveButton("Save", (dialog, which) -> {
@@ -319,12 +365,42 @@ public class MainActivity extends AppCompatActivity {
                     ReminderScheduler.setReminderInterval(this, selectedInterval);
                     ReminderScheduler.setStartHour(this, pickerStartHour.getValue());
                     ReminderScheduler.setEndHour(this, pickerEndHour.getValue());
+
+                    // Save custom message settings
+                    boolean use = checkUseCustomMessage.isChecked();
+                    String message = inputCustomMessage.getText().toString().trim();
+
+                    ReminderScheduler.setUseCustomMessage(this, use);
+                    ReminderScheduler.setCustomMessage(this, message);
+
                     updateReminderIcon();
                     Toast.makeText(this, enabled ? "Reminders enabled" : "Reminders disabled", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Cancel", null)
                 .create().show();
     }
+
+    private void updateMessagePreview(EditText input, TextView preview, boolean useCustom) {
+        String defaultMsg = getString(R.string.reminder_default);
+        if (useCustom) {
+            String message = input.getText().toString().trim();
+            if (message.isEmpty()) {
+                preview.setText(defaultMsg);
+                preview.setAlpha(0.6f);
+            } else {
+                // Check if the message already has the emoji
+                String displayMessage = (message.startsWith("💧") || message.startsWith("💪")) 
+                        ? message : "💧 " + message;
+                preview.setText(displayMessage);
+                preview.setAlpha(1f);
+            }
+        } else {
+            preview.setText(defaultMsg);
+            preview.setAlpha(0.6f);
+        }
+    }
+
+
 
     private void updateFactDisplay() {
         TextView tvDailyFact = findViewById(R.id.tvDailyFact);
