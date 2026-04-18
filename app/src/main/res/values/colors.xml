@@ -3,9 +3,8 @@
     <color name="background_dark">#121212</color>
     <color name="background_light">#f0f9ff</color>
     <color name="black">#ff000000</color>
-    <color name="blue_100">#e0f2fe</color>
-    <color name="blue_400">#38bdf8</color>
     <color name="blue_50">#f0f9ff</color>
+    <color name="blue_100">#e0f2fe</color>
     <color name="blue_600">#0284c7</color>
     <color name="blue_700">#0369a1</color>
     <color name="blue_900">#0c4a6e</color>
@@ -13,21 +12,14 @@
     <color name="card_light">#ffffffff</color>
     <color name="progress_bg_dark">#2d2d2d</color>
     <color name="progress_bg_light">#e2e8f0</color>
-    <color name="red_100">#fee2e2</color>
     <color name="red_200">#fecaca</color>
     <color name="red_50">#fef2f2</color>
     <color name="red_600">#dc2626</color>
     <color name="red_700">#b91c1c</color>
     <color name="red_800">#991b1b</color>
-    <color name="slate_200">#e2e8f0</color>
     <color name="slate_300">#cbd5e1</color>
     <color name="slate_400">#94a3b8</color>
-    <color name="slate_50">#f8fafc</color>
     <color name="slate_500">#64748b</color>
-    <color name="slate_600">#475569</color>
-    <color name="slate_700">#334155</color>
-    <color name="slate_800">#1e293b</color>
-    <color name="slate_900">#0f172a</color>
     <color name="splash_background">#f0f9ff</color>
     <color name="surface_dark">#1e1e1e</color>
     <color name="surface_light">#ffffffff</color>
@@ -38,10 +30,8 @@
     <color name="text_secondary_dark">#94a3b8</color>
     <color name="text_secondary_light">#64748b</color>
     <color name="white">#ffffffff</color>
-    <color name="red_dark_100">#3d2a2a</color>
     <color name="red_dark_200">#4d3535</color>
     <color name="red_dark_50">#2d1f1f</color>
-    <color name="red_dark_600">#ef4444</color>
     <color name="red_dark_700">#f87171</color>
     <color name="red_dark_800">#fca5a5</color>
 </resources>

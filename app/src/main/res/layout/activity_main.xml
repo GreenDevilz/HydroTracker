@@ -19,7 +19,6 @@
                 android:textStyle="bold"
                 android:textColor="@color/blue_600"
                 android:gravity="center_vertical"
-                android:id="@+id/appName"
                 android:layout_width="match_parent"
                 android:layout_height="72dp"
                 android:text="@string/app_display_name"
@@ -27,8 +26,23 @@
                 android:fontFamily="sans-serif-medium"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
-                android:layout_toStartOf="@+id/btnReminder"
+                android:layout_toStartOf="@+id/btnProfile"
                 android:layout_alignParentStart="true"/>
+
+            <ImageView
+                android:id="@+id/btnProfile"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@+id/btnReminder"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_user_profile"
+                android:contentDescription="@string/user_profile"
+                app:tint="@color/blue_600" />
+
             <ImageView
                 android:id="@+id/btnReminder"
                 android:background="?attr/selectableItemBackgroundBorderless"

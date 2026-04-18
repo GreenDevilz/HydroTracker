@@ -52,7 +52,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblWeight"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"
@@ -75,7 +74,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblAge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"
@@ -98,7 +96,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblHeight"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"
@@ -122,7 +119,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblBodyFat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"
@@ -146,7 +142,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblGender"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"
@@ -197,7 +192,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblActivity"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"
@@ -216,7 +210,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblActivityDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"
@@ -240,7 +233,6 @@
             <TextView
                 android:textSize="@dimen/text_size_body"
                 android:textColor="?attr/textPrimary"
-                android:id="@+id/lblClimate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_small"

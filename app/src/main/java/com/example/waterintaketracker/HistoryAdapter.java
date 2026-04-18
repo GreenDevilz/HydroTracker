@@ -36,23 +36,34 @@ public class HistoryAdapter extends BaseAdapter {
         return position;
     }
 
+    private static class ViewHolder {
+        TextView dateText;
+        TextView intakeText;
+        TextView goalText;
+        ProgressBar progressBar;
+    }
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+        ViewHolder holder;
         if (convertView == null) {
             convertView = this.inflater.inflate(R.layout.item_history, parent, false);
+            holder = new ViewHolder();
+            holder.dateText = convertView.findViewById(R.id.item_date);
+            holder.intakeText = convertView.findViewById(R.id.item_intake);
+            holder.goalText = convertView.findViewById(R.id.item_goal);
+            holder.progressBar = convertView.findViewById(R.id.item_progress);
+            convertView.setTag(holder);
+        } else {
+            holder = (ViewHolder) convertView.getTag();
         }
         
         HistoryEntry entry = this.historyList.get(position);
         
-        TextView dateText = convertView.findViewById(R.id.item_date);
-        TextView intakeText = convertView.findViewById(R.id.item_intake);
-        TextView goalText = convertView.findViewById(R.id.item_goal);
-        ProgressBar progressBar = convertView.findViewById(R.id.item_progress);
-
-        dateText.setText(entry.getFormattedDate());
-        intakeText.setText(this.activity.getString(R.string.format_ml, entry.getIntake()));
-        goalText.setText(this.activity.getString(R.string.format_goal, entry.getGoal()));
-        progressBar.setProgress(entry.getPercentage());
+        holder.dateText.setText(entry.getFormattedDate());
+        holder.intakeText.setText(this.activity.getString(R.string.format_ml, entry.getIntake()));
+        holder.goalText.setText(this.activity.getString(R.string.format_goal, entry.getGoal()));
+        holder.progressBar.setProgress(entry.getPercentage());
 
         int color;
         if (entry.isGoalMet()) {
@@ -60,7 +71,7 @@ public class HistoryAdapter extends BaseAdapter {
         } else {
             color = ContextCompat.getColor(this.activity, android.R.color.holo_blue_dark);
         }
-        progressBar.getProgressDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+        holder.progressBar.getProgressDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
 
         return convertView;
     }

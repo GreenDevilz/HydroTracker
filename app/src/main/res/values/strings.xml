@@ -3,19 +3,34 @@
     <string name="app_name">Hydro Tracker</string>
     <string name="app_display_name">Hydro Tracker</string>
 
+    <!-- User Profile Strings -->
+    <string name="user_profile">User Profile</string>
+    <string name="username_hint">Username</string>
+    <string name="password_hint">Password</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="logged_in_as">Logged in as: %1$s</string>
+    <string name="please_fill_all">Please fill all fields</string>
+    <string name="invalid_credentials">Invalid credentials</string>
+    <string name="account_created">Account created for %1$s</string>
+    <string name="username_exists">Username already exists</string>
+    <string name="logged_out">Logged out</string>
+    <string name="logged_in_toast">Logged in as %1$s</string>
+    <string name="user_statistics">User Statistics</string>
+    <string name="label_current_streak">Current Streak:</string>
+    <string name="label_7day_average">7-Day Average:</string>
+    <string name="format_days">%1$d days</string>
+
     <!-- Custom Reminder Messages -->
     <string name="reminder_custom_title">Custom Reminder Message</string>
     <string name="reminder_custom_hint">Enter your own reminder text…</string>
     <string name="reminder_default">💧 A quick sip to keep you going.</string>
     <string name="reminder_use_custom">Use custom message</string>
     <string name="reminder_notification_title">Time to drink water!</string>
+    <string name="reminder_custom_format">💧 %1$s</string>
 
     <!-- Activity Levels -->
-    <string name="activity_athlete">Athlete (2x/day)</string>
-    <string name="activity_light">Light (1–3x/week)</string>
-    <string name="activity_moderate">Moderate (3–5x/week)</string>
-    <string name="activity_sedentary">Sedentary (office job)</string>
-    <string name="activity_very_active">Very Active (daily)</string>
 
     <!-- Buttons and Labels -->
     <string name="back_button">Navigate back</string>
@@ -23,12 +38,9 @@
     <string name="btn_add_medium">+500ml</string>
     <string name="btn_add_small">+250ml</string>
     <string name="btn_apply">Apply to Tracker</string>
-    <string name="btn_back">Back</string>
     <string name="btn_calculate">Calculate</string>
     <string name="btn_cancel">Cancel</string>
     <string name="btn_history">History</string>
-    <string name="btn_reset">Reset</string>
-    <string name="btn_save">Save</string>
     <string name="btn_set_custom">✓ APPLY CUSTOM GOAL</string>
     <string name="btn_settings">Settings</string>
     <string name="btn_undo">Undo</string>
@@ -39,9 +51,6 @@
     <string name="clear_history_title">Clear History</string>
 
     <!-- Climate and Conditions -->
-    <string name="climate_cool">Cool / Air conditioned</string>
-    <string name="climate_hot">Hot / Humid</string>
-    <string name="climate_moderate">Moderate</string>
     <string name="condition_breastfeeding">Breastfeeding</string>
     <string name="condition_creatine">Creatine Supplementation</string>
     <string name="condition_excessive_sweating">Excessive Sweating</string>
@@ -57,9 +66,6 @@
     <string name="default_percentage">0%</string>
     <string name="default_streak">0</string>
 
-    <string name="error_age_required">Please enter your age</string>
-    <string name="error_weight_required">Please enter your weight</string>
-
     <string name="format_goal">/ %1$d ml</string>
     <string name="format_ml">%1$d ml</string>
     <string name="format_percentage">%1$d%%</string>
@@ -67,8 +73,6 @@
     <string name="gender_female">Female</string>
     <string name="gender_male">Male</string>
 
-    <string name="hint_age">e.g., 30</string>
-    <string name="hint_weight">e.g., 70</string>
     <string name="history_cleared">History cleared</string>
     <string name="history_header">Intake History</string>
 
@@ -99,7 +103,6 @@
     <string name="message_50">💧 Halfway there! You\'re doing great!</string>
     <string name="message_75">🎯 Almost there! Just 25% to go!</string>
     <string name="message_90">🚀 So close! Finish strong!</string>
-    <string name="message_100">🎉 Congratulations! Crushed your goal!</string>
     <string name="message_100_plus">🎉 Congratulations! Crushed your goal!</string>
     <string name="message_150">💫 Superstar! Going above and beyond!</string>
     <string name="message_200">🏆 Champion! Doubled your goal!</string>
@@ -107,7 +110,6 @@
     <string name="no_history_data">No history data</string>
     <string name="reminder_button">Reminders</string>
     <string name="reminder_settings_title">Reminder Settings</string>
-    <string name="reminder_window_info">Reminders will only be sent during this time window</string>
     <string name="restricted_mode_instruction">Please enter the limit recommended by your doctor:</string>
     <string name="restricted_mode_message">Automatic calculations may be unsafe for your condition.</string>
     <string name="restricted_mode_title">⚠️ MEDICAL FLUID RESTRICTION</string>
@@ -118,9 +120,7 @@
     <string name="settings_header">Hydration Settings</string>
 
     <string name="yes">Yes</string>
-    <string name="default_fact_counter">1/5</string>
     <string name="did_you_know">DID YOU KNOW?</string>
-    <string name="tap_for_next">tap for next</string>
     <string name="fact_bulb_emoji">💡</string>
 
     <string name="label_height">Height (cm, optional)</string>
@@ -159,16 +159,18 @@
     <string name="fact_26">👀 Your eyeballs are 95% water — they need constant moisture to maintain shape and focus light!</string>
     <string name="fact_27">🦠 Pure water droplets can stay liquid at -40°C — impurities trigger freezing!</string>
     <string name="fact_28">⚡ Water can glow — ultrasonic vibrations create tiny flashes of light called sonoluminescence!</string>
-    <string name="fact_29">❤️ Chronic dehydration increases risk of urinary tract infections.</string>
+    <string name="fact_29">💧 Water molecules are so cohesive that a column of water only 1 cm wide could lift a car!</string>
     <string name="fact_30">🧬 Water is the \"universal solvent\" — it dissolves more substances than any other liquid!</string>
     <string name="fact_31">⚡ Water conducts electricity - it\'s essential for your heart\'s rhythm!</string>
     <string name="fact_32">🏔️ There\'s water 400 miles underground — trapped in rock, holding 3x more than all surface oceans combined!</string>
     <string name="fact_33">🌡️ Your body loses more water at high altitudes and in dry climates.</string>
     <string name="fact_34">🦠 Your gut produces 1–3 pints of water daily through chemical reactions — recycling water inside you!</string>
-    <string name="fact_35">💧 By the time you feel thirsty, you\'re already mildly dehydrated.</string>
+    <string name="fact_35">💧 By the time you feel thirsty, you\'re already mildly de-hydrated.</string>
     <string name="fact_36">🎨 Pure water is actually pale blue — not clear! It absorbs red light, giving oceans their blue tint!</string>
     <string name="fact_37">🔬 Water makes up 75% of your brain cells - hydrate for mental clarity!</string>
     <string name="fact_38">🫧 Water molecules form fleeting networks that last only picoseconds — a millionth of a millionth of a second!</string>
     <string name="fact_39">🧴 Your skin elasticity depends on proper hydration - drink for healthy glow!</string>
     <string name="fact_40">🌡️ Water has an unusually high boiling point — without this property, oceans would evaporate instantly!</string>
+
+    <string name="goal_updated_toast">Goal updated to %1$d ml. Current intake: %2$d ml.</string>
 </resources>

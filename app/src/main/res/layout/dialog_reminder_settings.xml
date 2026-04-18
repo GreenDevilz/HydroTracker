@@ -5,15 +5,7 @@
     android:padding="@dimen/padding_large"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-    <TextView
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@color/blue_600"
-        android:gravity="center"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="@dimen/margin_large"
-        android:text="@string/reminder_settings_title"/>
+
     <LinearLayout
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -134,7 +126,7 @@
             android:textSize="14sp"
             android:textColor="?attr/textPrimary"
             android:textColorHint="?attr/textSecondary"
-            android:enabled="false"
+            android:enabled="true"
             android:inputType="textCapSentences|textMultiLine"
             android:autofillHints="none"
             android:minLines="2"

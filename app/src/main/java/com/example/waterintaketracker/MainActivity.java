@@ -6,14 +6,12 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.CheckBox;
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -37,6 +35,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.splashscreen.SplashScreen;
 
+import com.google.android.material.textfield.TextInputEditText;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int FACTS_PER_DAY = 5;
     private static final long FACT_ROTATION_INTERVAL = 30000;
     private static final int PRESS_AMOUNT_ML = 50;
-    private static final int PRESS_INTERVAL_MS = 150;
     private static final int PERMISSION_REQUEST_CODE = 1001;
 
     private String[] allFacts;
@@ -62,11 +61,11 @@ public class MainActivity extends AppCompatActivity {
     private Toast currentToast;
     private TextView dailyGoalText;
     private DataManager dataManager;
+    private UserManager userManager;
     private Runnable factRunnable;
     private Runnable hideMessageRunnable;
     private View horizontalProgress;
     private TextView percentageText;
-    private Runnable pressRunnable;
     private FrameLayout progressBarContainer;
     private TextView txtEncouragement;
     private WaterBottleView waterBottleView;
@@ -75,8 +74,6 @@ public class MainActivity extends AppCompatActivity {
     private int currentFactIndex = 0;
     private int dayCounter = 1;
     private final Handler factHandler = new Handler(Looper.getMainLooper());
-    private final Handler pressHandler = new Handler(Looper.getMainLooper());
-    private boolean isPressing = false;
     private int currentIntake = 0;
     private int dailyGoal = 2500;
     private final Handler messageHandler = new Handler(Looper.getMainLooper());
@@ -84,23 +81,36 @@ public class MainActivity extends AppCompatActivity {
     private boolean isUndoing = false;
     private final Stack<Integer> lastAdditions = new Stack<>();
 
+    private static final String KEY_UNDO_STACK = "undo_stack";
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        ArrayList<Integer> undoList = new ArrayList<>(lastAdditions);
+        outState.putIntegerArrayList(KEY_UNDO_STACK, undoList);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        ArrayList<Integer> undoList = savedInstanceState.getIntegerArrayList(KEY_UNDO_STACK);
+        if (undoList != null) {
+            lastAdditions.clear();
+            lastAdditions.addAll(undoList);
+            updateUndoButtonState();
+        }
+    }
+
     private final ActivityResultLauncher<Intent> settingsLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                Intent data;
-                if (result.getResultCode() == RESULT_OK && (data = result.getData()) != null) {
-                    int newGoal = data.getIntExtra("DAILY_GOAL", this.dailyGoal);
-                    this.dailyGoal = newGoal;
-                    this.dataManager.saveDailyGoal(this.dailyGoal);
-                    this.dataManager.onGoalChanged(newGoal);
-                    this.lastAdditions.clear();
-                    this.lastMessageThreshold = -1;
-                    updateDisplay();
-                    updateUndoButtonState();
+                if (result.getResultCode() == RESULT_OK) {
+                    refreshData();
                     if (this.currentToast != null) {
                         this.currentToast.cancel();
                     }
-                    this.currentToast = Toast.makeText(this, "Goal updated to " + newGoal + "ml\nYou've already had " + this.currentIntake + "ml today", Toast.LENGTH_LONG);
+                    String updateMsg = getString(R.string.goal_updated_toast, this.dailyGoal, this.currentIntake);
+                    this.currentToast = Toast.makeText(this, updateMsg, Toast.LENGTH_LONG);
                     this.currentToast.show();
                 }
             }
@@ -113,19 +123,24 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         this.dataManager = new DataManager(this);
-        this.dailyGoal = this.dataManager.getDailyGoal();
-        this.currentIntake = this.dataManager.getCurrentIntake();
-
+        this.userManager = new UserManager(this);
+        
         initializeViews();
+        refreshData();
         setupClickListeners();
-        updateDisplay();
         setupBottlePressListener();
         setupProgressBar();
-        updateUndoButtonState();
-        updateReminderIcon();
         initializeFacts();
         setupFactClickListener();
         startFactRotation();
+    }
+
+    private void refreshData() {
+        this.dailyGoal = this.dataManager.getDailyGoal();
+        this.currentIntake = this.dataManager.getCurrentIntake();
+        updateDisplay();
+        updateUndoButtonState();
+        updateReminderIcon();
     }
 
     @Override
@@ -144,45 +159,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeFacts() {
         this.allFacts = new String[]{
-                getString(R.string.fact_1),
-                getString(R.string.fact_2),
-                getString(R.string.fact_3),
-                getString(R.string.fact_4),
-                getString(R.string.fact_5),
-                getString(R.string.fact_6),
-                getString(R.string.fact_7),
-                getString(R.string.fact_8),
-                getString(R.string.fact_9),
-                getString(R.string.fact_10),
-                getString(R.string.fact_11),
-                getString(R.string.fact_12),
-                getString(R.string.fact_13),
-                getString(R.string.fact_14),
-                getString(R.string.fact_15),
-                getString(R.string.fact_16),
-                getString(R.string.fact_17),
-                getString(R.string.fact_18),
-                getString(R.string.fact_19),
-                getString(R.string.fact_20),
-                getString(R.string.fact_21),
-                getString(R.string.fact_22),
-                getString(R.string.fact_23),
-                getString(R.string.fact_24),
-                getString(R.string.fact_25),
-                getString(R.string.fact_26),
-                getString(R.string.fact_27),
-                getString(R.string.fact_28),
-                getString(R.string.fact_30),
-                getString(R.string.fact_31),
-                getString(R.string.fact_32),
-                getString(R.string.fact_33),
-                getString(R.string.fact_34),
-                getString(R.string.fact_35),
-                getString(R.string.fact_36),
-                getString(R.string.fact_37),
-                getString(R.string.fact_38),
-                getString(R.string.fact_39),
-                getString(R.string.fact_40)
+                getString(R.string.fact_1), getString(R.string.fact_2), getString(R.string.fact_3),
+                getString(R.string.fact_4), getString(R.string.fact_5), getString(R.string.fact_6),
+                getString(R.string.fact_7), getString(R.string.fact_8), getString(R.string.fact_9),
+                getString(R.string.fact_10), getString(R.string.fact_11), getString(R.string.fact_12),
+                getString(R.string.fact_13), getString(R.string.fact_14), getString(R.string.fact_15),
+                getString(R.string.fact_16), getString(R.string.fact_17), getString(R.string.fact_18),
+                getString(R.string.fact_19), getString(R.string.fact_20), getString(R.string.fact_21),
+                getString(R.string.fact_22), getString(R.string.fact_23), getString(R.string.fact_24),
+                getString(R.string.fact_25), getString(R.string.fact_26), getString(R.string.fact_27),
+                getString(R.string.fact_28), getString(R.string.fact_30), getString(R.string.fact_31),
+                getString(R.string.fact_32), getString(R.string.fact_33), getString(R.string.fact_34),
+                getString(R.string.fact_35), getString(R.string.fact_36), getString(R.string.fact_37),
+                getString(R.string.fact_38), getString(R.string.fact_39), getString(R.string.fact_40)
         };
         calculateDayCounter();
         selectTodaysFacts();
@@ -202,40 +191,28 @@ public class MainActivity extends AppCompatActivity {
     private List<String> remainingFacts = new ArrayList<>();
 
     private void selectTodaysFacts() {
-        // Initialize remainingFacts if empty (first run)
         if (remainingFacts.isEmpty()) {
             remainingFacts = new ArrayList<>(Arrays.asList(this.allFacts));
         }
-
-        // Calculate how many facts we need to select
         int numToSelect = Math.min(FACTS_PER_DAY, this.allFacts.length);
-
-        // Refill if we don't have enough to meet today's selection
         if (remainingFacts.size() < numToSelect) {
             remainingFacts = new ArrayList<>(Arrays.asList(this.allFacts));
         }
-
         Random random = new Random();
         Set<Integer> selectedIndices = new HashSet<>();
         this.todaysFacts.clear();
         random.setSeed(((long) this.dayCounter) * 1000);
-
-        // Select unique random indices from remainingFacts
         while (selectedIndices.size() < numToSelect) {
             int index = random.nextInt(remainingFacts.size());
             if (selectedIndices.add(index)) {
-                String selectedFact = remainingFacts.get(index);
-                this.todaysFacts.add(selectedFact);
+                this.todaysFacts.add(remainingFacts.get(index));
             }
         }
-
-        // Remove selected facts from remainingFacts (in reverse order to avoid index issues)
         List<Integer> sortedIndices = new ArrayList<>(selectedIndices);
         sortedIndices.sort((a, b) -> b - a);
         for (int index : sortedIndices) {
             remainingFacts.remove(index);
         }
-
         this.currentFactIndex = 0;
     }
 
@@ -274,302 +251,321 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showReminderSettingsDialog() {
-        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, "android.permission.POST_NOTIFICATIONS") != 0) {
-            requestNotificationPermission();
-            return;
+    private void showUserPanel() {
+        View panelView = getLayoutInflater().inflate(R.layout.dialog_user_panel, null);
+        TextView panelTitle = panelView.findViewById(R.id.panelTitle);
+        View layoutUsername = panelView.findViewById(R.id.layoutUsername);
+        View layoutPassword = panelView.findViewById(R.id.layoutPassword);
+        TextInputEditText inputUsername = panelView.findViewById(R.id.inputUsername);
+        TextInputEditText inputPassword = panelView.findViewById(R.id.inputPassword);
+        Button btnSignIn = panelView.findViewById(R.id.btnSignIn);
+        Button btnSignUp = panelView.findViewById(R.id.btnSignUp);
+        Button btnLogout = panelView.findViewById(R.id.btnLogout);
+
+        View userInfoSection = panelView.findViewById(R.id.userInfoSection);
+        TextView txtStreak = panelView.findViewById(R.id.txtStreak);
+        TextView txtAverage = panelView.findViewById(R.id.txtAverage);
+        TextView txtGoal = panelView.findViewById(R.id.txtGoal);
+
+        String currentUser = userManager.getCurrentUser();
+        if (currentUser != null) {
+            panelTitle.setText(getString(R.string.logged_in_as, currentUser));
+            layoutUsername.setVisibility(View.GONE);
+            layoutPassword.setVisibility(View.GONE);
+            btnSignIn.setVisibility(View.GONE);
+            btnSignUp.setVisibility(View.GONE);
+            btnLogout.setVisibility(View.VISIBLE);
+
+            userInfoSection.setVisibility(View.VISIBLE);
+            txtStreak.setText(getString(R.string.format_days, dataManager.getCurrentStreak()));
+            txtAverage.setText(getString(R.string.format_ml, dataManager.getAverageIntake()));
+            txtGoal.setText(getString(R.string.format_ml, dataManager.getDailyGoal()));
         }
 
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_reminder_settings, null);
-        final SwitchCompat switchReminders = dialogView.findViewById(R.id.switchReminders);
-        final Spinner spinnerInterval = dialogView.findViewById(R.id.spinnerInterval);
-        final NumberPicker pickerStartHour = dialogView.findViewById(R.id.pickerStartHour);
-        final NumberPicker pickerEndHour = dialogView.findViewById(R.id.pickerEndHour);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(panelView)
+                .create();
 
-        // Custom message views
-        final CheckBox checkUseCustomMessage = dialogView.findViewById(R.id.checkUseCustomMessage);
-        final EditText inputCustomMessage = dialogView.findViewById(R.id.inputCustomMessage);
-        final TextView txtMessagePreview = dialogView.findViewById(R.id.txtMessagePreview);
-
-        // Setup interval spinner
-        String[] intervals = {"30 minutes", "1 hour", "2 hours", "3 hours", "4 hours"};
-        ArrayAdapter<String> intervalAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, intervals);
-        intervalAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerInterval.setAdapter(intervalAdapter);
-
-        // Load reminder settings
-        switchReminders.setChecked(ReminderScheduler.isReminderEnabled(this));
-        int currentInterval = ReminderScheduler.getReminderInterval(this);
-        int intervalPosition;
-        if (currentInterval == 30) intervalPosition = 0;
-        else if (currentInterval == 60) intervalPosition = 1;
-        else if (currentInterval == 120) intervalPosition = 2;
-        else if (currentInterval == 180) intervalPosition = 3;
-        else if (currentInterval == 240) intervalPosition = 4;
-        else intervalPosition = 1;
-        spinnerInterval.setSelection(intervalPosition);
-
-        pickerStartHour.setMinValue(0);
-        pickerStartHour.setMaxValue(23);
-        pickerStartHour.setValue(ReminderScheduler.getStartHour(this));
-        pickerStartHour.setWrapSelectorWheel(false);
-
-        pickerEndHour.setMinValue(0);
-        pickerEndHour.setMaxValue(23);
-        pickerEndHour.setValue(ReminderScheduler.getEndHour(this));
-        pickerEndHour.setWrapSelectorWheel(false);
-
-        // Load custom message settings
-        String customMessage = ReminderScheduler.getCustomMessage(this);
-        boolean useCustom = ReminderScheduler.useCustomMessage(this);
-
-        // EditText is always enabled to allow typing
-        inputCustomMessage.setEnabled(true);
-        // CRITICAL FIX: Only set text if it's NOT empty. If it is empty, don't touch it so the hint shows.
-        if (!customMessage.isEmpty()) {
-            inputCustomMessage.setText(customMessage);
-        }
-
-        // Checkbox logic: only enabled if there is text
-        boolean hasText = !customMessage.trim().isEmpty();
-        checkUseCustomMessage.setEnabled(hasText);
-        // Force unchecked if there's no text, even if pref was true
-        checkUseCustomMessage.setChecked(useCustom && hasText);
-        
-        updateMessagePreview(inputCustomMessage, txtMessagePreview, checkUseCustomMessage.isChecked());
-
-        // Listeners
-        checkUseCustomMessage.setOnCheckedChangeListener((buttonView, isChecked) -> updateMessagePreview(inputCustomMessage, txtMessagePreview, isChecked));
-
-        inputCustomMessage.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override public void afterTextChanged(Editable s) {
-                boolean hasContent = !s.toString().trim().isEmpty();
-                checkUseCustomMessage.setEnabled(hasContent);
-                // If text is cleared, automatically uncheck the custom message option
-                if (!hasContent) {
-                    checkUseCustomMessage.setChecked(false);
-                }
-                updateMessagePreview(inputCustomMessage, txtMessagePreview, checkUseCustomMessage.isChecked());
+        btnSignIn.setOnClickListener(v -> {
+            Editable userEditable = inputUsername.getText();
+            Editable passEditable = inputPassword.getText();
+            if (userEditable == null || passEditable == null) return;
+            
+            String u = userEditable.toString().trim();
+            String p = passEditable.toString();
+            if (u.isEmpty() || p.isEmpty()) {
+                Toast.makeText(this, getString(R.string.please_fill_all), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (userManager.login(u, p, this)) {
+                Toast.makeText(this, getString(R.string.logged_in_toast, u), Toast.LENGTH_SHORT).show();
+                refreshData();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(this, getString(R.string.invalid_credentials), Toast.LENGTH_SHORT).show();
             }
         });
 
-        new AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setPositiveButton("Save", (dialog, which) -> {
-                    boolean enabled = switchReminders.isChecked();
-                    ReminderScheduler.setReminderEnabled(this, enabled);
-                    int[] intervalValues = {30, 60, 120, 180, 240};
-                    int selectedInterval = intervalValues[spinnerInterval.getSelectedItemPosition()];
-                    ReminderScheduler.setReminderInterval(this, selectedInterval);
-                    ReminderScheduler.setStartHour(this, pickerStartHour.getValue());
-                    ReminderScheduler.setEndHour(this, pickerEndHour.getValue());
+        btnSignUp.setOnClickListener(v -> {
+            Editable userEditable = inputUsername.getText();
+            Editable passEditable = inputPassword.getText();
+            if (userEditable == null || passEditable == null) return;
 
-                    // Save custom message settings
-                    boolean use = checkUseCustomMessage.isChecked();
-                    String message = inputCustomMessage.getText().toString().trim();
-
-                    ReminderScheduler.setUseCustomMessage(this, use);
-                    ReminderScheduler.setCustomMessage(this, message);
-
-                    updateReminderIcon();
-                    Toast.makeText(this, enabled ? "Reminders enabled" : "Reminders disabled", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .create().show();
-    }
-
-    private void updateMessagePreview(EditText input, TextView preview, boolean useCustom) {
-        String defaultMsg = getString(R.string.reminder_default);
-        if (useCustom) {
-            String message = input.getText().toString().trim();
-            if (message.isEmpty()) {
-                preview.setText(defaultMsg);
-                preview.setAlpha(0.6f);
-            } else {
-                // Check if the message already has the emoji
-                String displayMessage = (message.startsWith("💧") || message.startsWith("💪")) 
-                        ? message : "💧 " + message;
-                preview.setText(displayMessage);
-                preview.setAlpha(1f);
+            String u = userEditable.toString().trim();
+            String p = passEditable.toString();
+            if (u.isEmpty() || p.isEmpty()) {
+                Toast.makeText(this, getString(R.string.please_fill_all), Toast.LENGTH_SHORT).show();
+                return;
             }
+            if (userManager.signUp(u, p, this)) {
+                Toast.makeText(this, getString(R.string.account_created, u), Toast.LENGTH_SHORT).show();
+                refreshData();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(this, getString(R.string.username_exists), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnLogout.setOnClickListener(v -> {
+            userManager.logout(this);
+            Toast.makeText(this, getString(R.string.logged_out), Toast.LENGTH_SHORT).show();
+            refreshData();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void showReminderSettingsDialog() {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, "android.permission.POST_NOTIFICATIONS") != 0) {
+            requestNotificationPermission();
         } else {
-            preview.setText(defaultMsg);
-            preview.setAlpha(0.6f);
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_reminder_settings, null);
+            SwitchCompat switchReminders = dialogView.findViewById(R.id.switchReminders);
+            Spinner spinnerInterval = dialogView.findViewById(R.id.spinnerInterval);
+            NumberPicker pickerStart = dialogView.findViewById(R.id.pickerStartHour);
+            NumberPicker pickerEnd = dialogView.findViewById(R.id.pickerEndHour);
+            CheckBox checkCustom = dialogView.findViewById(R.id.checkUseCustomMessage);
+            EditText inputMessage = dialogView.findViewById(R.id.inputCustomMessage);
+            TextView txtPreview = dialogView.findViewById(R.id.txtMessagePreview);
+
+            // Initialize values
+            switchReminders.setChecked(ReminderScheduler.isReminderEnabled(this));
+            
+            String[] intervals = {"30", "60", "90", "120", "180", "240"};
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, intervals);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerInterval.setAdapter(adapter);
+            
+            int currentInterval = ReminderScheduler.getReminderInterval(this);
+            for (int i = 0; i < intervals.length; i++) {
+                if (Integer.parseInt(intervals[i]) == currentInterval) {
+                    spinnerInterval.setSelection(i);
+                    break;
+                }
+            }
+
+            pickerStart.setMinValue(0);
+            pickerStart.setMaxValue(23);
+            pickerStart.setValue(ReminderScheduler.getStartHour(this));
+
+            pickerEnd.setMinValue(0);
+            pickerEnd.setMaxValue(23);
+            pickerEnd.setValue(ReminderScheduler.getEndHour(this));
+
+            checkCustom.setChecked(ReminderScheduler.useCustomMessage(this));
+            inputMessage.setText(ReminderScheduler.getCustomMessage(this));
+            inputMessage.setEnabled(true); // Modifiable no matter if toggled or not
+
+            TextWatcher watcher = new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                @Override
+                public void afterTextChanged(Editable s) {
+                    updateReminderPreview(checkCustom.isChecked(), s.toString(), txtPreview);
+                }
+            };
+            inputMessage.addTextChangedListener(watcher);
+            
+            // Set initial preview
+            updateReminderPreview(checkCustom.isChecked(), inputMessage.getText().toString(), txtPreview);
+
+            checkCustom.setOnCheckedChangeListener((buttonView, isChecked) -> updateReminderPreview(isChecked, inputMessage.getText().toString(), txtPreview));
+
+            new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    ReminderScheduler.setReminderEnabled(this, switchReminders.isChecked());
+                    ReminderScheduler.setReminderInterval(this, Integer.parseInt(intervals[spinnerInterval.getSelectedItemPosition()]));
+                    ReminderScheduler.setStartHour(this, pickerStart.getValue());
+                    ReminderScheduler.setEndHour(this, pickerEnd.getValue());
+                    ReminderScheduler.setUseCustomMessage(this, checkCustom.isChecked());
+                    ReminderScheduler.setCustomMessage(this, inputMessage.getText().toString());
+                    updateReminderIcon();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
         }
     }
 
-
-
-    private void updateFactDisplay() {
-        TextView tvDailyFact = findViewById(R.id.tvDailyFact);
-        TextView tvFactCounter = findViewById(R.id.tvFactCounter);
-        if (tvDailyFact != null && !this.todaysFacts.isEmpty()) {
-            tvDailyFact.setText(this.todaysFacts.get(this.currentFactIndex));
+    private void updateReminderPreview(boolean useCustom, String text, TextView preview) {
+        if (!useCustom || text.trim().isEmpty()) {
+            preview.setText(getString(R.string.reminder_default));
+        } else {
+            String trimmed = text.trim();
+            if (trimmed.startsWith("💧")) {
+                preview.setText(trimmed);
+            } else {
+                preview.setText(getString(R.string.reminder_custom_format, trimmed));
+            }
         }
-        if (tvFactCounter != null) {
-            String counterText = (this.currentFactIndex + 1) + "/" + this.todaysFacts.size();
-            tvFactCounter.setText(counterText);
-        }
+    }
+
+    private void requestNotificationPermission() {
+        ActivityCompat.requestPermissions(this, new String[]{"android.permission.POST_NOTIFICATIONS"}, PERMISSION_REQUEST_CODE);
     }
 
     private void initializeViews() {
-        this.waterBottleView = findViewById(R.id.bottleVisual);
-        this.percentageText = findViewById(R.id.percentageText);
         this.currentIntakeText = findViewById(R.id.currentIntake);
         this.dailyGoalText = findViewById(R.id.dailyGoal);
+        this.percentageText = findViewById(R.id.percentageText);
         this.txtEncouragement = findViewById(R.id.txtEncouragement);
-        this.horizontalProgress = findViewById(R.id.horizontalProgress);
-        this.progressBarContainer = findViewById(R.id.progressBarContainer);
         this.btnAddSmall = findViewById(R.id.btnAddSmall);
         this.btnAddMedium = findViewById(R.id.btnAddMedium);
         this.btnAddLarge = findViewById(R.id.btnAddLarge);
         this.btnUndo = findViewById(R.id.btnUndo);
-        this.btnSettings = findViewById(R.id.btnSettings);
         this.btnHistory = findViewById(R.id.btnHistory);
-
-        if (this.dailyGoalText != null) {
-            this.dailyGoalText.setText(getString(R.string.format_ml, this.dailyGoal));
-        }
-    }
-
-    private void setupProgressBar() {
-        if (this.horizontalProgress == null) return;
-        updateProgressBarVisibility();
-        updateBottleVisibility();
-        this.progressBarContainer.post(() -> {
-            int percentage = this.dailyGoal > 0 ? Math.round((this.currentIntake / (float) this.dailyGoal) * 100.0f) : 0;
-            updateProgressBar(percentage);
-        });
-    }
-
-    private void requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            ActivityCompat.requestPermissions(this, new String[]{"android.permission.POST_NOTIFICATIONS"}, PERMISSION_REQUEST_CODE);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                showReminderSettingsDialog();
-            } else {
-                Toast.makeText(this, "Notification permission required for reminders", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    private void updateProgressBar(int percentage) {
-        if (this.horizontalProgress == null || this.progressBarContainer == null) return;
-        int parentWidth = this.progressBarContainer.getWidth();
-        if (parentWidth == 0) return;
-
-        int progressPercent = Math.min(percentage, 100);
-        int progressWidth = (int) (parentWidth * (progressPercent / 100.0f));
-        ViewGroup.LayoutParams params = this.horizontalProgress.getLayoutParams();
-        params.width = progressWidth;
-        this.horizontalProgress.setLayoutParams(params);
-    }
-
-    private void updateProgressBarVisibility() {
-        if (this.progressBarContainer == null) return;
-        int orientation = getResources().getConfiguration().orientation;
-        this.progressBarContainer.setVisibility(orientation == Configuration.ORIENTATION_LANDSCAPE ? View.VISIBLE : View.GONE);
+        this.btnSettings = findViewById(R.id.btnSettings);
+        this.waterBottleView = findViewById(R.id.bottleVisual);
+        this.progressBarContainer = findViewById(R.id.progressBarContainer);
     }
 
     private void setupClickListeners() {
-        if (this.btnAddSmall != null) this.btnAddSmall.setOnClickListener(v -> addWater(250));
-        if (this.btnAddMedium != null) this.btnAddMedium.setOnClickListener(v -> addWater(500));
-        if (this.btnAddLarge != null) this.btnAddLarge.setOnClickListener(v -> addWater(750));
-        if (this.btnUndo != null) this.btnUndo.setOnClickListener(v -> undoLastAddition());
-        if (this.btnSettings != null) this.btnSettings.setOnClickListener(v -> {
-            Intent intent = new Intent(this, SettingsActivity.class);
-            this.settingsLauncher.launch(intent);
-        });
-        if (this.btnHistory != null) this.btnHistory.setOnClickListener(v -> {
+        this.btnAddSmall.setOnClickListener(v -> addWater(250));
+        this.btnAddMedium.setOnClickListener(v -> addWater(500));
+        this.btnAddLarge.setOnClickListener(v -> addWater(750));
+        this.btnUndo.setOnClickListener(v -> undoLastAddition());
+        this.btnHistory.setOnClickListener(v -> {
             Intent intent = new Intent(this, HistoryActivity.class);
             startActivity(intent);
         });
-        ImageView btnReminder = findViewById(R.id.btnReminder);
-        if (btnReminder != null) btnReminder.setOnClickListener(v -> showReminderSettingsDialog());
+        this.btnSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            settingsLauncher.launch(intent);
+        });
+        findViewById(R.id.btnProfile).setOnClickListener(v -> showUserPanel());
+        findViewById(R.id.btnReminder).setOnClickListener(v -> showReminderSettingsDialog());
     }
 
-    private void updateReminderIcon() {
-        ImageView btnReminder = findViewById(R.id.btnReminder);
-        if (btnReminder == null) return;
-        boolean remindersEnabled = ReminderScheduler.isReminderEnabled(this);
-        int color = ContextCompat.getColor(this, remindersEnabled ? R.color.blue_600 : R.color.slate_400);
-        btnReminder.setColorFilter(color);
+    private void setupBottlePressListener() {
+        if (this.waterBottleView == null) return;
+        this.waterBottleView.setOnBottleTouchListener(() -> addWater(PRESS_AMOUNT_ML));
     }
 
-    public void addWater(int amount) {
-        this.isUndoing = false;
+    private void addWater(int amount) {
         this.currentIntake += amount;
-        this.lastAdditions.push(amount);  // No size limit anymore
-        // Remove the while loop that was limiting size
         this.dataManager.saveCurrentIntake(this.currentIntake);
+        if (!this.isUndoing) {
+            this.lastAdditions.push(amount);
+            updateUndoButtonState();
+        }
         updateDisplay();
-        updateUndoButtonState();
-    }
-
-    private void updateDisplay() {
-        float ratio = this.dailyGoal > 0 ? this.currentIntake / (float) this.dailyGoal : 0.0f;
-        int percentage = Math.round(100.0f * ratio);
-        if (this.percentageText != null) {
-            this.percentageText.setText(getString(R.string.format_percentage, percentage));
-        }
-        if (this.currentIntakeText != null) {
-            this.currentIntakeText.setText(getString(R.string.format_ml, this.currentIntake));
-        }
-        if (this.dailyGoalText != null) {
-            this.dailyGoalText.setText(getString(R.string.format_ml, this.dailyGoal));
-        }
-        if (this.waterBottleView != null) {
-            float visualLevel = Math.min(ratio, 1.0f);
-            this.waterBottleView.setWaterLevel(visualLevel, true);
-        }
-        updateProgressBar(percentage);
-        if (this.currentIntake == 0 && this.lastMessageThreshold != -1) {
-            this.lastMessageThreshold = -1;
-        }
-        showEncouragingMessage(percentage);
+        checkProgressMessages();
     }
 
     private void undoLastAddition() {
-        if (this.lastAdditions.isEmpty()) {
-            if (this.currentToast != null) this.currentToast.cancel();
-            this.currentToast = Toast.makeText(this, "Nothing to undo", Toast.LENGTH_SHORT);
-            this.currentToast.show();
-            return;
+        if (!this.lastAdditions.isEmpty()) {
+            this.isUndoing = true;
+            int lastAmount = this.lastAdditions.pop();
+            this.currentIntake = Math.max(0, this.currentIntake - lastAmount);
+            this.dataManager.saveCurrentIntake(this.currentIntake);
+            updateDisplay();
+            updateUndoButtonState();
+            this.isUndoing = false;
         }
-        this.isUndoing = true;
-        int lastAmount = this.lastAdditions.pop();
-        this.currentIntake = Math.max(0, this.currentIntake - lastAmount);
-        if (this.currentIntake == 0) this.lastMessageThreshold = -1;
-        this.dataManager.saveCurrentIntake(this.currentIntake);
-        updateDisplay();
-        updateUndoButtonState();
-        this.isUndoing = false;
-        if (this.currentToast != null) this.currentToast.cancel();
-        this.currentToast = Toast.makeText(this, "Undid +" + lastAmount + "ml", Toast.LENGTH_SHORT);
-        this.currentToast.show();
     }
 
     private void updateUndoButtonState() {
         if (this.btnUndo != null) {
-            boolean hasUndo = !this.lastAdditions.isEmpty();
-            this.btnUndo.setAlpha(hasUndo ? 1.0f : 0.5f);
-            this.btnUndo.setEnabled(hasUndo);
+            this.btnUndo.setEnabled(!this.lastAdditions.isEmpty());
+            this.btnUndo.setAlpha(this.lastAdditions.isEmpty() ? 0.5f : 1.0f);
         }
     }
 
-    private void showEncouragingMessage(int percentage) {
-        if (this.isUndoing || this.txtEncouragement == null) return;
+    private void updateDisplay() {
+        if (this.currentIntakeText != null) {
+            this.currentIntakeText.setText(String.valueOf(this.currentIntake));
+        }
+        if (this.dailyGoalText != null) {
+            this.dailyGoalText.setText(String.valueOf(this.dailyGoal));
+        }
+        int percentage = this.dailyGoal > 0 ? Math.round((this.currentIntake / (float) this.dailyGoal) * 100.0f) : 0;
+        if (this.percentageText != null) {
+            this.percentageText.setText(getString(R.string.format_percentage, percentage));
+        }
+        if (this.waterBottleView != null) {
+            this.waterBottleView.setWaterLevel(percentage / 100.0f, true);
+        }
+        updateProgressBar(percentage);
+    }
+
+    private void updateProgressBar(int percentage) {
+        if (this.horizontalProgress != null) {
+            ViewGroup.LayoutParams params = this.horizontalProgress.getLayoutParams();
+            int maxWidth = ((View) this.horizontalProgress.getParent()).getWidth();
+            params.width = (int) (maxWidth * (Math.min(percentage, 100) / 100.0f));
+            this.horizontalProgress.setLayoutParams(params);
+        }
+    }
+
+    private void setupProgressBar() {
+        this.horizontalProgress = findViewById(R.id.horizontalProgress);
+        updateProgressBarVisibility();
+    }
+
+    private void updateProgressBarVisibility() {
+        if (this.progressBarContainer != null) {
+            boolean isLandscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            this.progressBarContainer.setVisibility(isLandscape ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void updateBottleVisibility() {
+        if (this.waterBottleView != null) {
+            boolean isLandscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            this.waterBottleView.setVisibility(isLandscape ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private void updateFactDisplay() {
+        TextView factText = findViewById(R.id.tvDailyFact);
+        if (factText != null && !this.todaysFacts.isEmpty()) {
+            Animation fadeOut = AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
+            fadeOut.setDuration(500L);
+            fadeOut.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {}
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    factText.setText(MainActivity.this.todaysFacts.get(MainActivity.this.currentFactIndex));
+                    Animation fadeIn = AnimationUtils.loadAnimation(MainActivity.this, android.R.anim.fade_in);
+                    fadeIn.setDuration(500L);
+                    factText.startAnimation(fadeIn);
+                }
+                @Override
+                public void onAnimationRepeat(Animation animation) {}
+            });
+            factText.startAnimation(fadeOut);
+        }
+    }
+
+    private void checkProgressMessages() {
+        int percentage = this.dailyGoal > 0 ? (this.currentIntake * 100) / this.dailyGoal : 0;
         int threshold = -1;
         String message = "";
+
         if (percentage >= 200) { threshold = 200; message = getString(R.string.message_200); }
         else if (percentage >= 150) { threshold = 150; message = getString(R.string.message_150); }
         else if (percentage >= 100) { threshold = 100; message = getString(R.string.message_100_plus); }
@@ -577,78 +573,33 @@ public class MainActivity extends AppCompatActivity {
         else if (percentage >= 75) { threshold = 75; message = getString(R.string.message_75); }
         else if (percentage >= 50) { threshold = 50; message = getString(R.string.message_50); }
         else if (percentage >= 25) { threshold = 25; message = getString(R.string.message_25); }
-        else if (percentage > 0) { threshold = 0; message = getString(R.string.message_start); }
 
-        if (threshold != -1 && threshold != this.lastMessageThreshold) {
+        if (threshold != -1 && threshold != this.lastMessageThreshold && !this.isUndoing) {
             this.lastMessageThreshold = threshold;
-            this.txtEncouragement.setText(message);
-            this.txtEncouragement.setVisibility(View.VISIBLE);
-            Animation popAnim = AnimationUtils.loadAnimation(this, R.anim.message_pop);
-            this.txtEncouragement.startAnimation(popAnim);
-            if (this.hideMessageRunnable != null) {
-                this.messageHandler.removeCallbacks(this.hideMessageRunnable);
-            }
-            this.hideMessageRunnable = () -> {
-                Animation fadeAnim = AnimationUtils.loadAnimation(this, R.anim.message_fade);
-                fadeAnim.setAnimationListener(new Animation.AnimationListener() {
-                    @Override public void onAnimationStart(Animation animation) {}
-                    @Override public void onAnimationEnd(Animation animation) { MainActivity.this.txtEncouragement.setVisibility(View.GONE); }
-                    @Override public void onAnimationRepeat(Animation animation) {}
-                });
-                this.txtEncouragement.startAnimation(fadeAnim);
-            };
-            this.messageHandler.postDelayed(this.hideMessageRunnable, 2500L);
+            showEncouragement(message);
         }
     }
 
-    private void updateBottleVisibility() {
-        if (this.waterBottleView == null) return;
-        int orientation = getResources().getConfiguration().orientation;
-        this.waterBottleView.setVisibility(orientation == Configuration.ORIENTATION_LANDSCAPE ? View.GONE : View.VISIBLE);
-    }
+    private void showEncouragement(String message) {
+        if (this.txtEncouragement != null) {
+            this.txtEncouragement.setText(message);
+            this.txtEncouragement.setVisibility(View.VISIBLE);
+            this.txtEncouragement.setAlpha(0.0f);
+            this.txtEncouragement.animate().alpha(1.0f).setDuration(500L).start();
 
-    @SuppressLint("ClickableViewAccessibility")
-    private void setupBottlePressListener() {
-        if (this.waterBottleView == null) return;
-
-        // Use the new custom touch listener instead of OnTouchListener
-        this.waterBottleView.setOnBottleTouchListener(() -> {
-            this.isPressing = true;
-            startPressing();
-        });
-
-        // We need to handle the UP event differently now
-        this.waterBottleView.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
-                    this.isPressing = false;
-                    stopPressing();
-                    return true;
-                default:
-                    return false;
+            if (this.hideMessageRunnable != null) {
+                this.messageHandler.removeCallbacks(this.hideMessageRunnable);
             }
-        });
+            this.hideMessageRunnable = () -> MainActivity.this.txtEncouragement.animate().alpha(0.0f).setDuration(500L).withEndAction(() -> MainActivity.this.txtEncouragement.setVisibility(View.GONE)).start();
+            this.messageHandler.postDelayed(this.hideMessageRunnable, 5000L);
+        }
     }
 
-    private void startPressing() {
-        if (this.pressRunnable != null) return;
-        this.pressRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (MainActivity.this.isPressing) {
-                    MainActivity.this.addWater(PRESS_AMOUNT_ML);
-                    MainActivity.this.pressHandler.postDelayed(this, PRESS_INTERVAL_MS);
-                }
-            }
-        };
-        this.pressHandler.post(this.pressRunnable);
-    }
-
-    private void stopPressing() {
-        if (this.pressRunnable != null) {
-            this.pressHandler.removeCallbacks(this.pressRunnable);
-            this.pressRunnable = null;
+    private void updateReminderIcon() {
+        ImageView imgReminders = findViewById(R.id.btnReminder);
+        if (imgReminders != null) {
+            boolean enabled = ReminderScheduler.isReminderEnabled(this);
+            imgReminders.setColorFilter(ContextCompat.getColor(this, enabled ? R.color.blue_600 : R.color.slate_400));
         }
     }
 }
