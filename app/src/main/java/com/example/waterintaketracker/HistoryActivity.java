@@ -10,8 +10,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -105,6 +108,9 @@ public class HistoryActivity extends AppCompatActivity {
         }
         if (maxIntake == 0) maxIntake = 1;
 
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat outputFormat = new SimpleDateFormat("EEE", Locale.getDefault());
+
         for (HistoryEntry entry : last7) {
             LinearLayout barContainer = new LinearLayout(this);
             barContainer.setOrientation(LinearLayout.VERTICAL);
@@ -112,9 +118,18 @@ public class HistoryActivity extends AppCompatActivity {
             barContainer.setGravity(android.view.Gravity.BOTTOM | android.view.Gravity.CENTER_HORIZONTAL);
 
             TextView dateText = new TextView(this);
-            String day = entry.getFormattedDate();
-            if (day.length() > 3) day = day.substring(0, 3);
-            dateText.setText(day);
+            String rawDate = entry.getFormattedDate();
+            String dayLabel = rawDate;
+            try {
+                Date date = inputFormat.parse(rawDate);
+                if (date != null) {
+                    dayLabel = outputFormat.format(date);
+                }
+            } catch (ParseException e) {
+                if (dayLabel.length() > 3) dayLabel = dayLabel.substring(0, 3);
+            }
+            
+            dateText.setText(dayLabel);
             dateText.setTextSize(12);
             dateText.setTextColor(ContextCompat.getColor(this, R.color.blue_900));
             dateText.setGravity(android.view.Gravity.CENTER);

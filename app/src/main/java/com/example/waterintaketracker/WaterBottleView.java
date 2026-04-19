@@ -48,9 +48,12 @@ public class WaterBottleView extends View {
     private ValueAnimator waterAnimator;
     private ValueAnimator overflowAnimator;
 
-    // Add an interface for touch callbacks
+    // Interface for granular touch events
     public interface OnBottleTouchListener {
-        void onBottlePressed();
+        void onActionDown(float x, float y);
+        void onActionMove(float x, float y);
+        void onActionUp();
+        void onActionCancel();
     }
 
     private OnBottleTouchListener touchListener;
@@ -162,7 +165,6 @@ public class WaterBottleView extends View {
         this.bottlePath.reset();
         this.bottlePath.addRoundRect(this.bottleBody, 50.0f, 50.0f, Path.Direction.CW);
 
-        // Create region from path for touch detection
         Path tempPath = new Path();
         tempPath.addRoundRect(this.bottleBody, 50.0f, 50.0f, Path.Direction.CW);
         Region clipRegion = new Region();
@@ -194,22 +196,31 @@ public class WaterBottleView extends View {
         float x = event.getX();
         float y = event.getY();
 
-        // Check if the touch point is inside the bottle shape
         boolean isInsideBottle = bottleRegion.contains((int) x, (int) y);
 
-        // Handle touch based on whether it's inside the bottle
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 if (isInsideBottle && touchListener != null) {
-                    touchListener.onBottlePressed();
+                    touchListener.onActionDown(x, y);
                     performClick();
                     return true;
                 }
                 return false;
+            case MotionEvent.ACTION_MOVE:
+                if (touchListener != null) {
+                    touchListener.onActionMove(x, y);
+                }
+                return true;
             case MotionEvent.ACTION_UP:
+                if (touchListener != null) {
+                    touchListener.onActionUp();
+                }
+                return true;
             case MotionEvent.ACTION_CANCEL:
-                // You can add logic here for UP if needed
-                return isInsideBottle && touchListener != null;
+                if (touchListener != null) {
+                    touchListener.onActionCancel();
+                }
+                return true;
             default:
                 return false;
         }
@@ -220,7 +231,6 @@ public class WaterBottleView extends View {
         return super.performClick();
     }
 
-    // Set the touch listener
     public void setOnBottleTouchListener(OnBottleTouchListener listener) {
         this.touchListener = listener;
     }

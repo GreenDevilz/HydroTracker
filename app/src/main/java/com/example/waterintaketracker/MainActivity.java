@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.ViewConfiguration;
 import android.widget.EditText;
 import android.widget.CheckBox;
 import android.content.Intent;
@@ -50,6 +51,10 @@ public class MainActivity extends AppCompatActivity {
     private static final int PRESS_AMOUNT_ML = 50;
     private static final int PERMISSION_REQUEST_CODE = 1001;
 
+    private static final long START_DELAY_MS = 500;
+    private static final long MIN_DELAY_MS = 100;
+    private static final long ACCELERATION_STEP_MS = 50;
+
     private String[] allFacts;
     private Button btnAddLarge;
     private Button btnAddMedium;
@@ -80,6 +85,14 @@ public class MainActivity extends AppCompatActivity {
     private int lastMessageThreshold = -1;
     private boolean isUndoing = false;
     private final Stack<Integer> lastAdditions = new Stack<>();
+
+    private final Handler bottlePressHandler = new Handler(Looper.getMainLooper());
+    private Runnable bottlePressRunnable;
+    private long currentBottleDelay = START_DELAY_MS;
+    private float startX, startY;
+    private boolean isSwiping = false;
+    private boolean hasAddedInThisGesture = false;
+    private int swipeThreshold;
 
     private static final String KEY_UNDO_STACK = "undo_stack";
 
@@ -124,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
         this.dataManager = new DataManager(this);
         this.userManager = new UserManager(this);
+        this.swipeThreshold = ViewConfiguration.get(this).getScaledTouchSlop();
         
         initializeViews();
         refreshData();
@@ -254,24 +268,21 @@ public class MainActivity extends AppCompatActivity {
     private void showUserPanel() {
         View panelView = getLayoutInflater().inflate(R.layout.dialog_user_panel, null);
         TextView panelTitle = panelView.findViewById(R.id.panelTitle);
-        View layoutUsername = panelView.findViewById(R.id.layoutUsername);
-        View layoutPassword = panelView.findViewById(R.id.layoutPassword);
+        View userInfoSection = panelView.findViewById(R.id.userInfoSection);
+        TextView txtStreak = panelView.findViewById(R.id.txtStreak);
+        TextView txtAverage = panelView.findViewById(R.id.txtAverage);
+        TextView txtGoal = panelView.findViewById(R.id.txtGoal);
         TextInputEditText inputUsername = panelView.findViewById(R.id.inputUsername);
         TextInputEditText inputPassword = panelView.findViewById(R.id.inputPassword);
         Button btnSignIn = panelView.findViewById(R.id.btnSignIn);
         Button btnSignUp = panelView.findViewById(R.id.btnSignUp);
         Button btnLogout = panelView.findViewById(R.id.btnLogout);
 
-        View userInfoSection = panelView.findViewById(R.id.userInfoSection);
-        TextView txtStreak = panelView.findViewById(R.id.txtStreak);
-        TextView txtAverage = panelView.findViewById(R.id.txtAverage);
-        TextView txtGoal = panelView.findViewById(R.id.txtGoal);
-
         String currentUser = userManager.getCurrentUser();
         if (currentUser != null) {
             panelTitle.setText(getString(R.string.logged_in_as, currentUser));
-            layoutUsername.setVisibility(View.GONE);
-            layoutPassword.setVisibility(View.GONE);
+            panelView.findViewById(R.id.layoutUsername).setVisibility(View.GONE);
+            panelView.findViewById(R.id.layoutPassword).setVisibility(View.GONE);
             btnSignIn.setVisibility(View.GONE);
             btnSignUp.setVisibility(View.GONE);
             btnLogout.setVisibility(View.VISIBLE);
@@ -461,7 +472,66 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupBottlePressListener() {
         if (this.waterBottleView == null) return;
-        this.waterBottleView.setOnBottleTouchListener(() -> addWater(PRESS_AMOUNT_ML));
+        this.waterBottleView.setOnBottleTouchListener(new WaterBottleView.OnBottleTouchListener() {
+            @Override
+            public void onActionDown(float x, float y) {
+                startX = x;
+                startY = y;
+                isSwiping = false;
+                hasAddedInThisGesture = false;
+                currentBottleDelay = START_DELAY_MS;
+                
+                bottlePressRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isSwiping) {
+                            addWater(PRESS_AMOUNT_ML);
+                            hasAddedInThisGesture = true;
+                            // Once continuous addition starts, prevent ScrollView from intercepting
+                            if (waterBottleView.getParent() != null) {
+                                waterBottleView.getParent().requestDisallowInterceptTouchEvent(true);
+                            }
+                            currentBottleDelay = Math.max(MIN_DELAY_MS, currentBottleDelay - ACCELERATION_STEP_MS);
+                            bottlePressHandler.postDelayed(this, currentBottleDelay);
+                        }
+                    }
+                };
+                // Delay the start of continuous addition to verify if it's a swipe or tap
+                bottlePressHandler.postDelayed(bottlePressRunnable, START_DELAY_MS);
+            }
+
+            @Override
+            public void onActionMove(float x, float y) {
+                if (!isSwiping && (Math.abs(x - startX) > swipeThreshold || Math.abs(y - startY) > swipeThreshold)) {
+                    isSwiping = true;
+                    stopContinuousAddition();
+                }
+            }
+
+            @Override
+            public void onActionUp() {
+                if (!isSwiping && !hasAddedInThisGesture) {
+                    // It was a short tap, not a hold or swipe
+                    addWater(PRESS_AMOUNT_ML);
+                }
+                stopContinuousAddition();
+            }
+
+            @Override
+            public void onActionCancel() {
+                stopContinuousAddition();
+            }
+        });
+    }
+
+    private void stopContinuousAddition() {
+        if (bottlePressRunnable != null) {
+            bottlePressHandler.removeCallbacks(bottlePressRunnable);
+            bottlePressRunnable = null;
+        }
+        if (waterBottleView != null && waterBottleView.getParent() != null) {
+            waterBottleView.getParent().requestDisallowInterceptTouchEvent(false);
+        }
     }
 
     private void addWater(int amount) {
