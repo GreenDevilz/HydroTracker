@@ -51,4 +51,8 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_water_drop</item>
         <item name="postSplashScreenTheme">@style/Theme.WaterIntakeTracker</item>
     </style>
+
+    <style name="CircleAppearance" parent="">
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

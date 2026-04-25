@@ -39,8 +39,6 @@ import androidx.core.splashscreen.SplashScreen;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.material.textfield.TextInputEditText;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +67,6 @@ public class MainActivity extends AppCompatActivity {
     private Toast currentToast;
     private TextView dailyGoalText;
     private DataManager dataManager;
-    private UserManager userManager;
     private Runnable factRunnable;
     private Runnable hideMessageRunnable;
     private View horizontalProgress;
@@ -146,7 +143,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         this.dataManager = new DataManager(this);
-        this.userManager = new UserManager(this);
         this.swipeThreshold = ViewConfiguration.get(this).getScaledTouchSlop();
         
         initializeViews();
@@ -165,6 +161,12 @@ public class MainActivity extends AppCompatActivity {
         updateDisplay();
         updateUndoButtonState();
         updateReminderIcon();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshData();
     }
 
     @Override
@@ -273,88 +275,6 @@ public class MainActivity extends AppCompatActivity {
         if (this.factRunnable != null) {
             this.factHandler.removeCallbacks(this.factRunnable);
         }
-    }
-
-    private void showUserPanel() {
-        View panelView = getLayoutInflater().inflate(R.layout.dialog_user_panel, null);
-        TextView panelTitle = panelView.findViewById(R.id.panelTitle);
-        View userInfoSection = panelView.findViewById(R.id.userInfoSection);
-        TextView txtStreak = panelView.findViewById(R.id.txtStreak);
-        TextView txtAverage = panelView.findViewById(R.id.txtAverage);
-        TextView txtGoal = panelView.findViewById(R.id.txtGoal);
-        TextInputEditText inputUsername = panelView.findViewById(R.id.inputUsername);
-        TextInputEditText inputPassword = panelView.findViewById(R.id.inputPassword);
-        Button btnSignIn = panelView.findViewById(R.id.btnSignIn);
-        Button btnSignUp = panelView.findViewById(R.id.btnSignUp);
-        Button btnLogout = panelView.findViewById(R.id.btnLogout);
-
-        String currentUser = userManager.getCurrentUser();
-        if (currentUser != null) {
-            panelTitle.setText(getString(R.string.logged_in_as, currentUser));
-            panelView.findViewById(R.id.layoutUsername).setVisibility(View.GONE);
-            panelView.findViewById(R.id.layoutPassword).setVisibility(View.GONE);
-            btnSignIn.setVisibility(View.GONE);
-            btnSignUp.setVisibility(View.GONE);
-            btnLogout.setVisibility(View.VISIBLE);
-
-            userInfoSection.setVisibility(View.VISIBLE);
-            txtStreak.setText(getString(R.string.format_days, dataManager.getCurrentStreak()));
-            txtAverage.setText(getString(R.string.format_ml, dataManager.getAverageIntake()));
-            txtGoal.setText(getString(R.string.format_ml, dataManager.getDailyGoal()));
-        }
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setView(panelView)
-                .create();
-
-        btnSignIn.setOnClickListener(v -> {
-            Editable userEditable = inputUsername.getText();
-            Editable passEditable = inputPassword.getText();
-            if (userEditable == null || passEditable == null) return;
-            
-            String u = userEditable.toString().trim();
-            String p = passEditable.toString();
-            if (u.isEmpty() || p.isEmpty()) {
-                Toast.makeText(this, getString(R.string.please_fill_all), Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (userManager.login(u, p, this)) {
-                Toast.makeText(this, getString(R.string.logged_in_toast, u), Toast.LENGTH_SHORT).show();
-                refreshData();
-                dialog.dismiss();
-            } else {
-                Toast.makeText(this, getString(R.string.invalid_credentials), Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnSignUp.setOnClickListener(v -> {
-            Editable userEditable = inputUsername.getText();
-            Editable passEditable = inputPassword.getText();
-            if (userEditable == null || passEditable == null) return;
-
-            String u = userEditable.toString().trim();
-            String p = passEditable.toString();
-            if (u.isEmpty() || p.isEmpty()) {
-                Toast.makeText(this, getString(R.string.please_fill_all), Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (userManager.signUp(u, p, this)) {
-                Toast.makeText(this, getString(R.string.account_created, u), Toast.LENGTH_SHORT).show();
-                refreshData();
-                dialog.dismiss();
-            } else {
-                Toast.makeText(this, getString(R.string.username_exists), Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnLogout.setOnClickListener(v -> {
-            userManager.logout(this);
-            Toast.makeText(this, getString(R.string.logged_out), Toast.LENGTH_SHORT).show();
-            refreshData();
-            dialog.dismiss();
-        });
-
-        dialog.show();
     }
 
     private void showReminderSettingsDialog() {
@@ -476,7 +396,10 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this, SettingsActivity.class);
             settingsLauncher.launch(intent);
         });
-        findViewById(R.id.btnProfile).setOnClickListener(v -> showUserPanel());
+        findViewById(R.id.btnProfile).setOnClickListener(v -> {
+            Intent intent = new Intent(this, ProfileActivity.class);
+            startActivity(intent);
+        });
         findViewById(R.id.btnReminder).setOnClickListener(v -> showReminderSettingsDialog());
     }
 

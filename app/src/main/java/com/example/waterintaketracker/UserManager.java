@@ -5,7 +5,9 @@ import android.content.SharedPreferences;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class UserManager {
@@ -72,6 +74,18 @@ public class UserManager {
         context.getApplicationContext().getSharedPreferences(MAIN_PREFS, Context.MODE_PRIVATE).edit().clear().apply();
     }
 
+    public void deleteAccount(String username, Context context) {
+        if (username.equals(this.currentUser)) {
+            logout(context);
+        }
+        this.users.remove(username);
+        saveUsers();
+    }
+
+    public List<String> getAllUsernames() {
+        return new ArrayList<>(this.users.keySet());
+    }
+
     private void saveCurrentUserData(Context context) {
         if (this.currentUser != null) {
             UserData user = this.users.get(this.currentUser);
@@ -105,6 +119,26 @@ public class UserManager {
             else if (val instanceof String) editor.putString(entry.getKey(), (String) val);
         }
         editor.apply();
+    }
+
+    public long getUserTotalIntake(String username) {
+        UserData user = this.users.get(username);
+        if (user == null || user.localData == null) return 0;
+        
+        Object historyJson = user.localData.get("history_data");
+        if (historyJson instanceof String) {
+            Gson gson = new Gson();
+            Type type = new TypeToken<ArrayList<HistoryEntry>>() {}.getType();
+            List<HistoryEntry> history = gson.fromJson((String) historyJson, type);
+            if (history != null) {
+                long total = 0;
+                for (HistoryEntry entry : history) {
+                    total += entry.getIntake();
+                }
+                return total;
+            }
+        }
+        return 0;
     }
 
     private static class UserData {

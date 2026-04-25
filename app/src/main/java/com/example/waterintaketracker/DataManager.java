@@ -184,6 +184,15 @@ public class DataManager {
         return total / last7.size();
     }
 
+    public long getTotalIntakeAllTime() {
+        List<HistoryEntry> history = getHistory();
+        long total = 0;
+        for (HistoryEntry entry : history) {
+            total += entry.getIntake();
+        }
+        return total;
+    }
+
     // App install date methods
     public void saveAppInstallDate(long date) {
         this.editor.putLong(KEY_APP_INSTALL_DATE, date).apply();

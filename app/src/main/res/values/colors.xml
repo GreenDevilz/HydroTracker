@@ -17,9 +17,11 @@
     <color name="red_600">#dc2626</color>
     <color name="red_700">#b91c1c</color>
     <color name="red_800">#991b1b</color>
+    <color name="slate_200">#e2e8f0</color>
     <color name="slate_300">#cbd5e1</color>
     <color name="slate_400">#94a3b8</color>
     <color name="slate_500">#64748b</color>
+    <color name="slate_600">#475569</color>
     <color name="splash_background">#f0f9ff</color>
     <color name="surface_dark">#1e1e1e</color>
     <color name="surface_light">#ffffffff</color>
